@@ -82,14 +82,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Valida: Requisitos 5.3**
     - Testar que arrays de plan IDs armazenados e recuperados são equivalentes
 
-- [ ] 5. Implementar serviço de autenticação
-  - [ ] 5.1 Criar AuthService com hash de senhas
+- [x] 5. Implementar serviço de autenticação
+  - [x] 5.1 Criar AuthService com hash de senhas
     - Implementar `server/src/services/authService.js`
     - Implementar `hashPassword()` usando bcrypt com 10 rounds
     - Implementar `comparePassword()` para validação
     - _Requisitos: 1.3, 2.1_
   
-  - [ ] 5.2 Implementar registro de usuários
+  - [x] 5.2 Implementar registro de usuários
     - Implementar `register(name, email, password)` no AuthService
     - Validar formato de email (RFC 5322)
     - Validar senha mínima de 8 caracteres
@@ -98,20 +98,20 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 2.1, 2.2, 2.3, 2.4_
 
   
-  - [ ] 5.3 Implementar login e geração de JWT
+  - [x] 5.3 Implementar login e geração de JWT
     - Implementar `login(email, password)` no AuthService
     - Gerar JWT token com validade de 24 horas
     - Incluir userId, email e role no payload
     - Retornar erro 401 para credenciais inválidas
     - _Requisitos: 1.1, 1.2_
   
-  - [ ] 5.4 Implementar verificação de JWT
+  - [x] 5.4 Implementar verificação de JWT
     - Implementar `verifyToken(token)` no AuthService
     - Validar assinatura e expiração do token
     - Retornar erro 401 para tokens expirados ou inválidos
     - _Requisitos: 1.4_
   
-  - [ ]* 5.5 Escrever testes de property para autenticação
+  - [x] 5.5 Escrever testes de property para autenticação
     - **Property 1: Valid credentials generate valid 24-hour tokens**
     - **Valida: Requisitos 1.1**
     - **Property 2: Invalid credentials return 401**
@@ -127,15 +127,15 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Property 7: Invalid email formats are rejected**
     - **Valida: Requisitos 2.4**
   
-  - [ ]* 5.6 Escrever testes unitários para AuthService
+  - [x] 5.6 Escrever testes unitários para AuthService
     - Testar casos de sucesso e erro para register
     - Testar casos de sucesso e erro para login
     - Testar validação de token
     - _Requisitos: 1.1, 1.2, 1.4, 2.1, 2.2, 2.3, 2.4_
 
 
-- [ ] 6. Implementar middleware de autenticação e autorização
-  - [ ] 6.1 Criar middleware de autenticação JWT
+- [x] 6. Implementar middleware de autenticação e autorização
+  - [x] 6.1 Criar middleware de autenticação JWT
     - Implementar `server/src/middleware/auth.js`
     - Extrair token do header Authorization
     - Verificar token usando AuthService
@@ -143,14 +143,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Retornar erro 401 se token ausente ou inválido
     - _Requisitos: 1.1, 1.4, 7.1_
   
-  - [ ] 6.2 Criar middleware de verificação de role
+  - [x] 6.2 Criar middleware de verificação de role
     - Implementar `server/src/middleware/roleCheck.js`
     - Criar função `roleCheck(allowedRoles)` que retorna middleware
     - Verificar se req.user.role está em allowedRoles
     - Retornar erro 403 se role não autorizada
     - _Requisitos: 3.1, 3.2, 3.3_
   
-  - [ ]* 6.3 Escrever testes de property para controle de acesso
+  - [x] 6.3 Escrever testes de property para controle de acesso
     - **Property 8: USER role cannot access admin endpoints**
     - **Valida: Requisitos 3.1**
     - **Property 9: ADMIN role can access admin endpoints**
