@@ -207,7 +207,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Valida: Requisitos 10.3, 16.1, 16.2, 16.4**
 
 
-- [ ] 9. Checkpoint - Verificar configuração inicial
+- [x] 9. Checkpoint - Verificar configuração inicial
   - Executar migrations e verificar criação das tabelas
   - Testar registro e login de usuário via API
   - Verificar que usuário admin foi criado
@@ -217,15 +217,15 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 2: Upload e Gestão de Arquivos (Admin)
 
-- [ ] 10. Implementar serviço de upload de arquivos
-  - [ ] 10.1 Configurar multer para upload
+- [x] 10. Implementar serviço de upload de arquivos
+  - [x] 10.1 Configurar multer para upload
     - Instalar e configurar multer no servidor
     - Configurar diretório de uploads (`server/uploads/`)
     - Configurar limite de 100MB por arquivo
     - Implementar geração de nomes únicos para arquivos
     - _Requisitos: 4.1, 4.3_
   
-  - [ ] 10.2 Criar UploadService
+  - [x] 10.2 Criar UploadService
     - Implementar `server/src/services/uploadService.js`
     - Implementar `processUpload(file, uploadedBy)`
     - Implementar `validateFile(file)` para validar tamanho
