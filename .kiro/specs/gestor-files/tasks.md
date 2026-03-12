@@ -156,13 +156,13 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Property 9: ADMIN role can access admin endpoints**
     - **Valida: Requisitos 3.2**
   
-  - [ ]* 6.4 Escrever testes unitários para middleware
+  - [x] 6.4 Escrever testes unitários para middleware
     - Testar autenticação com token válido e inválido
     - Testar verificação de role para USER e ADMIN
     - _Requisitos: 1.4, 3.1, 3.2_
 
-- [ ] 7. Criar endpoints de autenticação
-  - [ ] 7.1 Implementar rotas de autenticação
+- [x] 7. Criar endpoints de autenticação
+  - [x] 7.1 Implementar rotas de autenticação
     - Criar `server/src/routes/auth.js`
     - Implementar POST /api/auth/register
     - Implementar POST /api/auth/login
@@ -170,7 +170,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 1.1, 1.2, 2.1_
 
   
-  - [ ] 7.2 Criar controllers de autenticação
+  - [x] 7.2 Criar controllers de autenticação
     - Implementar `server/src/controllers/authController.js`
     - Implementar `register()` controller
     - Implementar `login()` controller
@@ -178,7 +178,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Adicionar tratamento de erros consistente
     - _Requisitos: 1.1, 1.2, 2.1_
   
-  - [ ]* 7.3 Escrever testes de integração para endpoints de auth
+  - [x] 7.3 Escrever testes de integração para endpoints de auth
     - Testar POST /api/auth/register com dados válidos e inválidos
     - Testar POST /api/auth/login com credenciais válidas e inválidas
     - Testar GET /api/auth/me com e sem token
