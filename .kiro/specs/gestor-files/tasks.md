@@ -184,21 +184,21 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar GET /api/auth/me com e sem token
     - _Requisitos: 1.1, 1.2, 2.1_
 
-- [ ] 8. Criar seed de dados iniciais
-  - [ ] 8.1 Criar migration de seed para planos padrão
+- [x] 8. Criar seed de dados iniciais
+  - [x] 8.1 Criar migration de seed para planos padrão
     - Implementar `005_seed_default_plans.sql`
     - Inserir plano Free (price: 0.00, maxDownloadsPerMonth: 10)
     - Inserir plano Basic (price: 9.99, maxDownloadsPerMonth: 100)
     - Inserir plano Premium (price: 29.99, maxDownloadsPerMonth: -1)
     - _Requisitos: 10.1, 10.4_
   
-  - [ ] 8.2 Criar seed para usuário admin
+  - [x] 8.2 Criar seed para usuário admin
     - Implementar `006_seed_admin_user.sql`
     - Criar usuário admin com email: admin@example.com, senha: admin123
     - Atribuir role ADMIN e plano Premium
     - _Requisitos: 3.2_
   
-  - [ ]* 8.3 Escrever testes de property para planos
+  - [x] 8.3 Escrever testes de property para planos
     - **Property 28: Plans can be created with all required fields**
     - **Valida: Requisitos 10.1**
     - **Property 29: Duplicate plan names are rejected**
