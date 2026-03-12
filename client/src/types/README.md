@@ -1,0 +1,3 @@
+# Types
+
+TypeScript type definitions will be placed here.

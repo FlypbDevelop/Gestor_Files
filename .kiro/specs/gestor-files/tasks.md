@@ -13,20 +13,20 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 1: Configuração Inicial e Backend
 
-- [ ] 1. Estruturar projeto monorepo
+- [x] 1. Estruturar projeto monorepo
   - Criar estrutura de diretórios: `client/`, `server/`
   - Inicializar package.json em ambos os diretórios
   - Configurar scripts de desenvolvimento e build
   - _Requisitos: Base para todos os requisitos_
 
-- [ ] 2. Configurar servidor Node.js + Express
-  - [ ] 2.1 Criar servidor Express básico
+- [-] 2. Configurar servidor Node.js + Express
+  - [x] 2.1 Criar servidor Express básico
     - Implementar `server/src/server.js` com Express
     - Configurar middleware: CORS, helmet, express.json()
     - Configurar porta e variáveis de ambiente
     - _Requisitos: 1.1, 1.2, 3.1, 3.2_
   
-  - [ ]* 2.2 Escrever testes unitários para configuração do servidor
+  - [x] 2.2 Escrever testes unitários para configuração do servidor
     - Testar inicialização do servidor
     - Testar middleware CORS e helmet
     - _Requisitos: 1.1_
