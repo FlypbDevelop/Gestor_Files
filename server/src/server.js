@@ -2,6 +2,8 @@ require('dotenv').config();
 const express = require('express');
 const cors = require('cors');
 const helmet = require('helmet');
+const { initializeDatabase } = require('./db/database');
+const MigrationRunner = require('./db/MigrationRunner');
 
 const app = express();
 const PORT = process.env.PORT || 3000;
@@ -37,11 +39,30 @@ app.use((err, req, res, next) => {
   });
 });
 
+// Initialize database and run migrations
+async function startServer() {
+  try {
+    console.log('Initializing database...');
+    await initializeDatabase();
+    
+    console.log('Running migrations...');
+    const runner = new MigrationRunner();
+    await runner.runMigrations();
+    
+    console.log('Database ready');
+  } catch (error) {
+    console.error('Failed to initialize database:', error);
+    process.exit(1);
+  }
+}
+
 // Start server only if not in test environment
 if (process.env.NODE_ENV !== 'test') {
-  app.listen(PORT, () => {
-    console.log(`Server running on port ${PORT}`);
-    console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+  startServer().then(() => {
+    app.listen(PORT, () => {
+      console.log(`Server running on port ${PORT}`);
+      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+    });
   });
 }
 

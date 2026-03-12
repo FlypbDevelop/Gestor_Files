@@ -32,14 +32,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 1.1_
 
 
-- [ ] 3. Configurar banco de dados SQLite
-  - [ ] 3.1 Criar módulo de conexão SQLite
+- [x] 3. Configurar banco de dados SQLite
+  - [x] 3.1 Criar módulo de conexão SQLite
     - Implementar `server/src/db/database.js` com conexão SQLite
     - Configurar path do banco via variável de ambiente
     - Implementar função de inicialização do banco
     - _Requisitos: 1.1, 2.1, 8.1_
   
-  - [ ] 3.2 Criar sistema de migrations
+  - [x] 3.2 Criar sistema de migrations
     - Implementar `MigrationRunner` para executar migrations
     - Criar tabela `migrations` para tracking
     - Implementar lógica de detecção de migrations pendentes
@@ -50,14 +50,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar detecção de migrations já executadas
     - _Requisitos: 1.1_
 
-- [ ] 4. Criar tabelas do banco de dados
-  - [ ] 4.1 Criar migration para tabela plans
+- [x] 4. Criar tabelas do banco de dados
+  - [x] 4.1 Criar migration para tabela plans
     - Implementar `001_create_plans_table.sql`
     - Definir schema: id, name, price, features (JSON), timestamps
     - Criar índice em name
     - _Requisitos: 10.1, 10.2, 10.3_
   
-  - [ ] 4.2 Criar migration para tabela users
+  - [x] 4.2 Criar migration para tabela users
     - Implementar `002_create_users_table.sql`
     - Definir schema: id, name, email, password_hash, role, plan_id, timestamps
     - Criar índices em email e plan_id
@@ -65,13 +65,13 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 1.1, 1.3, 2.1, 2.2, 3.4_
 
   
-  - [ ] 4.3 Criar migration para tabela files
+  - [x] 4.3 Criar migration para tabela files
     - Implementar `003_create_files_table.sql`
     - Definir schema: id, filename, path, mime_type, size, uploaded_by, allowed_plan_ids (JSON), max_downloads_per_user, timestamps
     - Criar índices em uploaded_by e created_at
     - _Requisitos: 4.1, 4.2, 5.1, 5.2, 5.3_
   
-  - [ ] 4.4 Criar migration para tabela downloads
+  - [x] 4.4 Criar migration para tabela downloads
     - Implementar `004_create_downloads_table.sql`
     - Definir schema: id, user_id, file_id, ip_address, downloaded_at
     - Criar índices em (user_id, file_id), file_id e downloaded_at
