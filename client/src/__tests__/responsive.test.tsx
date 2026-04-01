@@ -5,8 +5,35 @@
  * Requirement 14.1: THE System SHALL renderizar corretamente em viewports de 320px de largura ou superior
  */
 import { render, screen } from '@testing-library/react'
-import { beforeEach, afterEach, describe, it, expect } from 'vitest'
-import App from '../App'
+import { MemoryRouter } from 'react-router-dom'
+import { beforeEach, afterEach, describe, it, expect, vi } from 'vitest'
+import React from 'react'
+import LoginPage from '../pages/LoginPage'
+import RegisterPage from '../pages/RegisterPage'
+
+// Mock apiClient to prevent real network calls
+vi.mock('../services/apiClient', () => ({
+  default: {
+    setToken: vi.fn(),
+    getCurrentUser: vi.fn().mockRejectedValue(new Error('no token')),
+    login: vi.fn(),
+    register: vi.fn(),
+  },
+}))
+
+// Mock AuthContext so AuthProvider doesn't need localStorage
+vi.mock('../contexts/AuthContext', () => ({
+  AuthProvider: ({ children }: { children: React.ReactNode }) => <>{children}</>,
+  useAuth: () => ({
+    user: null,
+    token: null,
+    isAuthenticated: false,
+    isAdmin: false,
+    login: vi.fn(),
+    register: vi.fn(),
+    logout: vi.fn(),
+  }),
+}))
 
 function setViewport(width: number, height = 768) {
   Object.defineProperty(window, 'innerWidth', { writable: true, configurable: true, value: width })
@@ -48,24 +75,40 @@ describe('Responsive rendering at 320px viewport (Requirement 14.1)', () => {
     mockMatchMedia(1024)
   })
 
-  it('renders App without crashing at 320px viewport width', () => {
-    render(<App />)
+  it('renders LoginPage without crashing at 320px viewport width', () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    )
     expect(document.body).toBeTruthy()
   })
 
-  it('renders the main heading at 320px viewport', () => {
-    render(<App />)
-    expect(screen.getByRole('heading', { name: /gestor de arquivos/i })).toBeInTheDocument()
+  it('renders the login heading at 320px viewport', () => {
+    render(
+      <MemoryRouter>
+        <LoginPage />
+      </MemoryRouter>
+    )
+    expect(screen.getByRole('heading', { name: /login/i })).toBeInTheDocument()
   })
 
-  it('renders the application description at 320px viewport', () => {
-    render(<App />)
-    expect(screen.getByText(/sistema de gerenciamento de arquivos/i)).toBeInTheDocument()
+  it('renders RegisterPage without crashing at 320px viewport width', () => {
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+    expect(document.body).toBeTruthy()
   })
 
-  it('renders interactive elements at 320px viewport', () => {
-    render(<App />)
-    expect(screen.getByRole('button')).toBeInTheDocument()
+  it('renders the register heading at 320px viewport', () => {
+    render(
+      <MemoryRouter>
+        <RegisterPage />
+      </MemoryRouter>
+    )
+    expect(screen.getByRole('heading', { name: /cadastro/i })).toBeInTheDocument()
   })
 
   it('window.innerWidth is 320 during test', () => {

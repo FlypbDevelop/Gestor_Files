@@ -459,15 +459,15 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar `getDownloadHistory()`
     - _Requisitos: 7.1, 13.1_
   
-  - [-] 20.5 Escrever testes unitários para ApiClient
+  - [x] 20.5 Escrever testes unitários para ApiClient
     - Testar configuração de token
     - Testar tratamento de erros
     - Testar métodos de API com mock
     - _Requisitos: 1.1, 1.2, 4.1, 6.1, 7.1_
 
 
-- [ ] 21. Criar AuthContext para gerenciamento de estado global
-  - [ ] 21.1 Implementar AuthContext e AuthProvider
+- [x] 21. Criar AuthContext para gerenciamento de estado global
+  - [x] 21.1 Implementar AuthContext e AuthProvider
     - Criar `client/src/contexts/AuthContext.tsx`
     - Implementar estado: user, token, isAuthenticated, isAdmin
     - Implementar funções: login, register, logout
@@ -475,29 +475,29 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Carregar token do localStorage na inicialização
     - _Requisitos: 1.1, 1.2, 2.1_
   
-  - [ ]* 21.2 Escrever testes unitários para AuthContext
+  - [x] 21.2 Escrever testes unitários para AuthContext
     - Testar login e armazenamento de token
     - Testar logout e limpeza de token
     - Testar carregamento de token do localStorage
     - _Requisitos: 1.1, 1.2_
 
-- [ ] 22. Configurar React Router e rotas
-  - [ ] 22.1 Criar estrutura de rotas
+- [x] 22. Configurar React Router e rotas
+  - [x] 22.1 Criar estrutura de rotas
     - Instalar e configurar React Router
     - Criar `client/src/App.tsx` com rotas
     - Definir rotas: /login, /register, /dashboard, /admin
     - Implementar navegação adaptativa mobile/desktop
     - _Requisitos: 14.4_
   
-  - [ ] 22.2 Criar componente de rota protegida
+  - [x] 22.2 Criar componente de rota protegida
     - Criar `ProtectedRoute` component que verifica autenticação
     - Redirecionar para /login se não autenticado
     - Criar `AdminRoute` component que verifica role ADMIN
     - _Requisitos: 3.1, 3.2_
 
 
-- [ ] 23. Criar componentes de autenticação
-  - [ ] 23.1 Criar componente de Login
+- [x] 23. Criar componentes de autenticação
+  - [x] 23.1 Criar componente de Login
     - Implementar `client/src/components/auth/Login.tsx`
     - Criar formulário com email e senha
     - Integrar com AuthContext.login()
@@ -505,7 +505,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Redirecionar para dashboard após login
     - _Requisitos: 1.1, 1.2_
   
-  - [ ] 23.2 Criar componente de Register
+  - [x] 23.2 Criar componente de Register
     - Implementar `client/src/components/auth/Register.tsx`
     - Criar formulário com nome, email e senha
     - Integrar com AuthContext.register()
@@ -514,13 +514,13 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Redirecionar para dashboard após registro
     - _Requisitos: 2.1, 2.2, 2.3, 2.4_
   
-  - [ ]* 23.3 Escrever testes unitários para componentes de auth
+  - [x] 23.3 Escrever testes unitários para componentes de auth
     - Testar renderização de formulários
     - Testar validação de campos
     - Testar submissão de formulários
     - _Requisitos: 1.1, 1.2, 2.1_
 
-- [ ] 24. Checkpoint - Verificar estrutura do frontend
+- [x] 24. Checkpoint - Verificar estrutura do frontend
   - Testar navegação entre rotas
   - Testar login e registro via interface
   - Verificar que token é armazenado corretamente
