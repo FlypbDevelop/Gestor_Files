@@ -233,21 +233,21 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Salvar arquivo no filesystem e criar registro no banco
     - _Requisitos: 4.1, 4.2, 4.3_
   
-  - [ ]* 10.3 Escrever testes de property para upload
+  - [x] 10.3 Escrever testes de property para upload
     - **Property 10: File upload creates both file and database record**
     - **Valida: Requisitos 4.1, 4.2**
     - **Property 11: Failed uploads don't create database records**
     - **Valida: Requisitos 4.4**
   
-  - [ ]* 10.4 Escrever testes unitários para UploadService
+  - [x] 10.4 Escrever testes unitários para UploadService
     - Testar upload bem-sucedido
     - Testar rejeição de arquivos maiores que 100MB
     - Testar geração de nomes únicos
     - _Requisitos: 4.1, 4.3, 4.4_
 
 
-- [ ] 11. Implementar FileManager para gestão de arquivos
-  - [ ] 11.1 Criar FileManager service
+- [x] 11. Implementar FileManager para gestão de arquivos
+  - [x] 11.1 Criar FileManager service
     - Implementar `server/src/services/fileManager.js`
     - Implementar `createFile(fileData)` para criar registro
     - Implementar `getFileById(fileId)` para buscar arquivo
@@ -255,13 +255,13 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar `deleteFile(fileId)` para remover arquivo e registro
     - _Requisitos: 4.1, 6.1, 6.2_
   
-  - [ ] 11.2 Implementar configuração de permissões de arquivo
+  - [x] 11.2 Implementar configuração de permissões de arquivo
     - Implementar `updateFilePermissions(fileId, allowedPlanIds, maxDownloadsPerUser)`
     - Validar que allowedPlanIds é array de IDs válidos
     - Validar que maxDownloadsPerUser é inteiro positivo ou NULL
     - _Requisitos: 5.1, 5.2, 5.4_
   
-  - [ ]* 11.3 Escrever testes de property para FileManager
+  - [x] 11.3 Escrever testes de property para FileManager
     - **Property 12: Multiple plans can be assigned to files**
     - **Valida: Requisitos 5.1**
     - **Property 13: Download limits accept positive integers**
@@ -271,7 +271,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Property 16: Users only see files for their plan**
     - **Valida: Requisitos 6.1**
   
-  - [ ]* 11.4 Escrever testes unitários para FileManager
+  - [x] 11.4 Escrever testes unitários para FileManager
     - Testar criação e busca de arquivos
     - Testar atualização de permissões
     - Testar listagem de arquivos por plano
@@ -279,8 +279,8 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 4.1, 5.1, 5.2, 6.1_
 
 
-- [ ] 12. Criar endpoints de gestão de arquivos (Admin)
-  - [ ] 12.1 Implementar rotas de arquivos
+- [x] 12. Criar endpoints de gestão de arquivos (Admin)
+  - [x] 12.1 Implementar rotas de arquivos
     - Criar `server/src/routes/files.js`
     - Implementar POST /api/files/upload (protegido, ADMIN only)
     - Implementar PUT /api/files/:id/permissions (protegido, ADMIN only)
@@ -288,7 +288,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar GET /api/files (protegido, retorna todos para ADMIN)
     - _Requisitos: 4.1, 5.1, 5.2_
   
-  - [ ] 12.2 Criar controllers de arquivos
+  - [x] 12.2 Criar controllers de arquivos
     - Implementar `server/src/controllers/fileController.js`
     - Implementar `uploadFile()` controller
     - Implementar `updatePermissions()` controller
@@ -296,7 +296,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar `listFiles()` controller
     - _Requisitos: 4.1, 5.1, 5.2_
   
-  - [ ]* 12.3 Escrever testes de integração para endpoints de arquivos
+  - [x] 12.3 Escrever testes de integração para endpoints de arquivos
     - Testar POST /api/files/upload como ADMIN
     - Testar PUT /api/files/:id/permissions como ADMIN
     - Testar DELETE /api/files/:id como ADMIN
