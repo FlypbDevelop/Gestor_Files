@@ -599,20 +599,20 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 6: Dashboards (Admin e User)
 
-- [ ] 28. Implementar endpoints de dashboard
-  - [ ] 28.1 Criar rotas de dashboard
+- [x] 28. Implementar endpoints de dashboard
+  - [x] 28.1 Criar rotas de dashboard
     - Criar `server/src/routes/dashboard.js`
     - Implementar GET /api/dashboard/admin (protegido, ADMIN only)
     - Implementar GET /api/dashboard/user (protegido)
     - _Requisitos: 12.1, 12.2, 12.3, 13.1, 13.2, 13.3_
   
-  - [ ] 28.2 Criar controllers de dashboard
+  - [x] 28.2 Criar controllers de dashboard
     - Implementar `server/src/controllers/dashboardController.js`
     - Implementar `getAdminStats()` que retorna: total users, files, downloads, most downloaded files, user distribution by plan
     - Implementar `getUserDashboard()` que retorna: current plan, download history, total downloads
     - _Requisitos: 12.1, 12.2, 12.3, 13.1, 13.2, 13.3_
   
-  - [ ]* 28.3 Escrever testes de property para dashboards
+  - [x] 28.3 Escrever testes de property para dashboards
     - **Property 33: Admin dashboard shows accurate counts**
     - **Valida: Requisitos 12.1**
     - **Property 34: Most downloaded files ranked correctly**
@@ -629,7 +629,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Valida: Requisitos 13.4**
 
   
-  - [ ]* 28.4 Escrever testes unitários para controllers de dashboard
+  - [x] 28.4 Escrever testes unitários para controllers de dashboard
     - Testar cálculo de estatísticas admin
     - Testar ordenação de arquivos mais baixados
     - Testar distribuição de usuários por plano
