@@ -303,7 +303,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar que USER não pode acessar endpoints de admin
     - _Requisitos: 3.1, 4.1, 5.1_
 
-- [ ] 13. Checkpoint - Verificar upload e gestão de arquivos
+- [x] 13. Checkpoint - Verificar upload e gestão de arquivos
   - Testar upload de arquivo como admin via API
   - Testar configuração de permissões de arquivo
   - Testar listagem de arquivos
@@ -314,15 +314,15 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 3: Download com Validação e Limites
 
-- [ ] 14. Implementar AccessValidator para validação de acesso
-  - [ ] 14.1 Criar AccessValidator service
+- [x] 14. Implementar AccessValidator para validação de acesso
+  - [x] 14.1 Criar AccessValidator service
     - Implementar `server/src/services/accessValidator.js`
     - Implementar `validateDownloadAccess(userId, fileId)` que retorna {allowed, reason}
     - Implementar `checkPlanAccess(planId, allowedPlanIds)` para verificar plano
     - Implementar `checkDownloadLimit(userId, fileId, maxDownloads)` para verificar limite
     - _Requisitos: 7.1, 7.2, 7.3, 9.1, 9.2_
   
-  - [ ]* 14.2 Escrever testes de property para AccessValidator
+  - [x] 14.2 Escrever testes de property para AccessValidator
     - **Property 20: Unauthenticated download requests fail**
     - **Valida: Requisitos 7.1**
     - **Property 21: Unauthorized plan access is denied**
@@ -334,15 +334,15 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Property 27: NULL limits allow unlimited downloads**
     - **Valida: Requisitos 9.3**
   
-  - [ ]* 14.3 Escrever testes unitários para AccessValidator
+  - [x] 14.3 Escrever testes unitários para AccessValidator
     - Testar validação de acesso com plano autorizado e não autorizado
     - Testar verificação de limite com diferentes cenários
     - Testar limite NULL (ilimitado)
     - _Requisitos: 7.2, 7.3, 9.1, 9.2, 9.3_
 
 
-- [ ] 15. Implementar DownloadController para processamento de downloads
-  - [ ] 15.1 Criar DownloadController service
+- [x] 15. Implementar DownloadController para processamento de downloads
+  - [x] 15.1 Criar DownloadController service
     - Implementar `server/src/services/downloadController.js`
     - Implementar `processDownload(userId, fileId, ipAddress, res)` que valida e faz streaming
     - Implementar `logDownload(userId, fileId, ipAddress)` para registrar download
@@ -350,12 +350,12 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar `getRealIpAddress(req)` para extrair IP real
     - _Requisitos: 7.1, 7.2, 7.3, 7.4, 8.1, 8.3, 15.2, 15.3_
   
-  - [ ] 15.2 Garantir atomicidade entre entrega e registro
+  - [x] 15.2 Garantir atomicidade entre entrega e registro
     - Criar registro de download antes de iniciar streaming
     - Implementar rollback se streaming falhar
     - _Requisitos: 8.4_
   
-  - [ ]* 15.3 Escrever testes de property para DownloadController
+  - [x] 15.3 Escrever testes de property para DownloadController
     - **Property 23: Successful downloads create log entries**
     - **Valida: Requisitos 8.1**
     - **Property 24: Failed downloads don't create log entries**
@@ -367,7 +367,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Property 41: Filesystem paths are never exposed**
     - **Valida: Requisitos 15.4**
   
-  - [ ]* 15.4 Escrever testes unitários para DownloadController
+  - [x] 15.4 Escrever testes unitários para DownloadController
     - Testar processamento de download bem-sucedido
     - Testar falha de validação (não cria log)
     - Testar streaming de arquivo
@@ -375,28 +375,28 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 7.4, 8.1, 8.2, 8.3, 15.2_
 
 
-- [ ] 16. Criar endpoints de download
-  - [ ] 16.1 Implementar rotas de download
+- [x] 16. Criar endpoints de download
+  - [x] 16.1 Implementar rotas de download
     - Criar `server/src/routes/downloads.js`
     - Implementar GET /api/downloads/:fileId (protegido)
     - Implementar GET /api/downloads/history (protegido)
     - _Requisitos: 7.1, 13.1_
   
-  - [ ] 16.2 Criar controllers de download
+  - [x] 16.2 Criar controllers de download
     - Implementar `server/src/controllers/downloadController.js`
     - Implementar `downloadFile()` controller que usa DownloadController service
     - Implementar `getDownloadHistory()` controller
     - Adicionar tratamento de erros: 401, 403, 429
     - _Requisitos: 7.1, 7.2, 7.3, 7.4, 13.1_
   
-  - [ ]* 16.3 Escrever testes de integração para endpoints de download
+  - [x] 16.3 Escrever testes de integração para endpoints de download
     - Testar GET /api/downloads/:fileId com acesso autorizado
     - Testar GET /api/downloads/:fileId com plano não autorizado (403)
     - Testar GET /api/downloads/:fileId com limite excedido (429)
     - Testar GET /api/downloads/history
     - _Requisitos: 7.1, 7.2, 7.3, 13.1_
 
-- [ ] 17. Checkpoint - Verificar download com validação
+- [x] 17. Checkpoint - Verificar download com validação
   - Testar download de arquivo como usuário autorizado
   - Testar rejeição de download para plano não autorizado
   - Testar rejeição de download quando limite excedido
@@ -407,25 +407,25 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 4: Frontend React (Estrutura, Rotas, Componentes)
 
-- [ ] 18. Configurar projeto React com Vite e TailwindCSS
-  - [ ] 18.1 Inicializar projeto React com Vite
+- [x] 18. Configurar projeto React com Vite e TailwindCSS
+  - [x] 18.1 Inicializar projeto React com Vite
     - Criar projeto em `client/` usando Vite + React + TypeScript
     - Configurar `vite.config.ts` com proxy para backend
     - Configurar variáveis de ambiente para API URL
     - _Requisitos: 14.1, 14.2_
   
-  - [ ] 18.2 Configurar TailwindCSS
+  - [x] 18.2 Configurar TailwindCSS
     - Instalar e configurar TailwindCSS
     - Configurar `tailwind.config.js` com breakpoints responsivos
     - Criar arquivo de estilos globais
     - _Requisitos: 14.1, 14.2, 14.3_
   
-  - [ ]* 18.3 Escrever testes para configuração responsiva
+  - [x] 18.3 Escrever testes para configuração responsiva
     - Testar que componentes renderizam em viewport 320px
     - _Requisitos: 14.1_
 
-- [ ] 19. Criar estrutura de tipos TypeScript
-  - [ ] 19.1 Definir tipos de domínio
+- [x] 19. Criar estrutura de tipos TypeScript
+  - [x] 19.1 Definir tipos de domínio
     - Criar `client/src/types/index.ts`
     - Definir interfaces: User, File, Download, Plan, FilePermissions
     - Definir tipos de resposta da API
@@ -433,33 +433,33 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: Todos os requisitos de frontend_
 
 
-- [ ] 20. Implementar API Client service
-  - [ ] 20.1 Criar ApiClient class
+- [x] 20. Implementar API Client service
+  - [x] 20.1 Criar ApiClient class
     - Implementar `client/src/services/apiClient.ts`
     - Configurar axios com baseURL e interceptors
     - Implementar `setToken(token)` para adicionar token aos headers
     - Implementar tratamento de erros global
     - _Requisitos: 1.1, 1.2_
   
-  - [ ] 20.2 Implementar métodos de autenticação
+  - [x] 20.2 Implementar métodos de autenticação
     - Implementar `login(email, password)`
     - Implementar `register(name, email, password)`
     - Implementar `getCurrentUser()`
     - _Requisitos: 1.1, 1.2, 2.1_
   
-  - [ ] 20.3 Implementar métodos de arquivos
+  - [x] 20.3 Implementar métodos de arquivos
     - Implementar `listFiles()`
     - Implementar `uploadFile(file, permissions)` (admin)
     - Implementar `updateFilePermissions(fileId, permissions)` (admin)
     - Implementar `deleteFile(fileId)` (admin)
     - _Requisitos: 4.1, 5.1, 5.2, 6.1_
   
-  - [ ] 20.4 Implementar métodos de download
+  - [x] 20.4 Implementar métodos de download
     - Implementar `downloadFile(fileId)` que retorna Blob
     - Implementar `getDownloadHistory()`
     - _Requisitos: 7.1, 13.1_
   
-  - [ ]* 20.5 Escrever testes unitários para ApiClient
+  - [-] 20.5 Escrever testes unitários para ApiClient
     - Testar configuração de token
     - Testar tratamento de erros
     - Testar métodos de API com mock
