@@ -531,8 +531,8 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 5: Integração Frontend-Backend
 
-- [ ] 25. Criar componentes de listagem de arquivos
-  - [ ] 25.1 Criar componente FileList para usuários
+- [x] 25. Criar componentes de listagem de arquivos
+  - [x] 25.1 Criar componente FileList para usuários
     - Implementar `client/src/components/user/FileList.tsx`
     - Buscar arquivos via ApiClient.listFiles()
     - Exibir: filename, size, mime_type, downloads_remaining
@@ -540,14 +540,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Adicionar botão de download para cada arquivo
     - _Requisitos: 6.1, 6.2, 6.3, 6.4_
   
-  - [ ] 25.2 Implementar funcionalidade de download
+  - [x] 25.2 Implementar funcionalidade de download
     - Criar função handleDownload que chama ApiClient.downloadFile()
     - Criar Blob URL e trigger download no navegador
     - Exibir mensagens de erro (403, 429)
     - Atualizar lista após download bem-sucedido
     - _Requisitos: 7.1, 7.2, 7.3_
   
-  - [ ]* 25.3 Escrever testes de property para listagem
+  - [x] 25.3 Escrever testes de property para listagem
     - **Property 17: File listings include remaining downloads**
     - **Valida: Requisitos 6.2**
     - **Property 18: Files are ordered by creation date descending**
@@ -555,15 +555,15 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - **Property 19: File listings include required metadata**
     - **Valida: Requisitos 6.4**
   
-  - [ ]* 25.4 Escrever testes unitários para FileList
+  - [x] 25.4 Escrever testes unitários para FileList
     - Testar renderização de lista de arquivos
     - Testar download de arquivo
     - Testar exibição de erros
     - _Requisitos: 6.1, 6.2, 7.1_
 
 
-- [ ] 26. Criar componentes de upload de arquivos (Admin)
-  - [ ] 26.1 Criar componente FileUpload
+- [x] 26. Criar componentes de upload de arquivos (Admin)
+  - [x] 26.1 Criar componente FileUpload
     - Implementar `client/src/components/admin/FileUpload.tsx`
     - Criar input de seleção de arquivo
     - Criar seleção múltipla de planos (checkboxes)
@@ -573,7 +573,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Exibir mensagens de sucesso e erro
     - _Requisitos: 4.1, 5.1, 5.2_
   
-  - [ ] 26.2 Criar componente FileManagement para admin
+  - [x] 26.2 Criar componente FileManagement para admin
     - Implementar `client/src/components/admin/FileManagement.tsx`
     - Listar todos os arquivos (admin view)
     - Adicionar botão de editar permissões
@@ -581,13 +581,13 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar modal de edição de permissões
     - _Requisitos: 5.1, 5.2_
   
-  - [ ]* 26.3 Escrever testes unitários para componentes de admin
+  - [x] 26.3 Escrever testes unitários para componentes de admin
     - Testar upload de arquivo
     - Testar edição de permissões
     - Testar deleção de arquivo
     - _Requisitos: 4.1, 5.1, 5.2_
 
-- [ ] 27. Checkpoint - Verificar integração frontend-backend
+- [x] 27. Checkpoint - Verificar integração frontend-backend
   - Testar upload de arquivo como admin
   - Testar configuração de permissões
   - Testar listagem de arquivos como usuário
