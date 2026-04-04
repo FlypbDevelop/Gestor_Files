@@ -138,6 +138,25 @@ describe('UserDashboard component', () => {
     expect(screen.getAllByText('15/06/2024').length).toBeGreaterThan(0);
   });
 
+  it('exibe hora formatada (HH:MM) para cada download (Req 13.4)', async () => {
+    mockGetUserDashboard.mockResolvedValue(sampleDashboard);
+    render(<UserDashboard />);
+    await screen.findByText('Basic');
+    // Calcula a hora esperada usando o mesmo método do componente (respeita timezone do ambiente)
+    const expectedTime = new Date('2024-06-15T14:30:00Z').toLocaleTimeString('pt-BR', {
+      hour: '2-digit',
+      minute: '2-digit',
+    });
+    expect(screen.getAllByText(expectedTime).length).toBeGreaterThan(0);
+  });
+
+  it('exibe o cabeçalho "Histórico de downloads" (Req 13.1)', async () => {
+    mockGetUserDashboard.mockResolvedValue(sampleDashboard);
+    render(<UserDashboard />);
+    await screen.findByText('Basic');
+    expect(screen.getByText('Histórico de downloads')).toBeInTheDocument();
+  });
+
   // ---- Req 13.1: ordenação por data descendente ----
   it('ordena o histórico por data descendente (mais recente primeiro)', async () => {
     mockGetUserDashboard.mockResolvedValue(sampleDashboard);

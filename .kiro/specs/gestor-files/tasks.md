@@ -662,7 +662,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 13.1, 13.2, 13.3, 13.4_
 
   
-  - [ ]* 30.2 Escrever testes unitários para UserDashboard
+  - [x] 30.2 Escrever testes unitários para UserDashboard
     - Testar renderização de informações do plano
     - Testar exibição de histórico de downloads
     - Testar ordenação de histórico
