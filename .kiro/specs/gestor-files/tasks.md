@@ -645,14 +645,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Exibir gráfico de distribuição de usuários por plano
     - _Requisitos: 12.1, 12.2, 12.3_
   
-  - [ ]* 29.2 Escrever testes unitários para AdminDashboard
+  - [x] 29.2 Escrever testes unitários para AdminDashboard
     - Testar renderização de estatísticas
     - Testar exibição de arquivos mais baixados
     - Testar exibição de distribuição por plano
     - _Requisitos: 12.1, 12.2, 12.3_
 
-- [ ] 30. Criar componente UserDashboard
-  - [ ] 30.1 Implementar UserDashboard component
+- [x] 30. Criar componente UserDashboard
+  - [x] 30.1 Implementar UserDashboard component
     - Implementar `client/src/components/user/UserDashboard.tsx`
     - Buscar dados via ApiClient
     - Exibir informações do plano atual
