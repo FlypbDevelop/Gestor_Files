@@ -636,8 +636,8 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar histórico de downloads do usuário
     - _Requisitos: 12.1, 12.2, 12.3, 13.1, 13.2, 13.3_
 
-- [ ] 29. Criar componente AdminDashboard
-  - [ ] 29.1 Implementar AdminDashboard component
+- [x] 29. Criar componente AdminDashboard
+  - [x] 29.1 Implementar AdminDashboard component
     - Implementar `client/src/components/admin/AdminDashboard.tsx`
     - Buscar estatísticas via ApiClient
     - Exibir cards com: total de usuários, arquivos, downloads

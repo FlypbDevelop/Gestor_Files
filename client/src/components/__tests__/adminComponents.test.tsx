@@ -485,3 +485,102 @@ describe('FileManagement component', () => {
     await waitFor(() => expect(mockDeleteFile).toHaveBeenCalled());
   });
 });
+
+// ============================================================
+// AdminDashboard component — Requirements 12.1, 12.2, 12.3
+// ============================================================
+
+import AdminDashboard from '../admin/AdminDashboard';
+import { AdminStats } from '../../types';
+
+vi.mock('../../services/apiClient', () => ({
+  default: {
+    uploadFile: vi.fn(),
+    listFiles: vi.fn(),
+    updateFilePermissions: vi.fn(),
+    deleteFile: vi.fn(),
+    getAdminStats: vi.fn(),
+  },
+}));
+
+const mockGetAdminStats = vi.mocked(apiClient.getAdminStats);
+
+const sampleStats: AdminStats = {
+  totalUsers: 42,
+  totalFiles: 15,
+  totalDownloads: 300,
+  mostDownloadedFiles: [
+    { id: 1, filename: 'relatorio.pdf', download_count: 120 },
+    { id: 2, filename: 'imagem.png', download_count: 80 },
+  ],
+  usersByPlan: [
+    { plan_name: 'Free', user_count: 30 },
+    { plan_name: 'Premium', user_count: 12 },
+  ],
+};
+
+describe('AdminDashboard component', () => {
+  beforeEach(() => {
+    vi.clearAllMocks();
+  });
+
+  it('shows loading state initially (Req 12.1)', () => {
+    mockGetAdminStats.mockReturnValue(new Promise(() => {}));
+    render(<AdminDashboard />);
+    expect(screen.getByText(/carregando estatísticas/i)).toBeInTheDocument();
+  });
+
+  it('shows error when getAdminStats fails', async () => {
+    mockGetAdminStats.mockRejectedValue(new ApiRequestError('Acesso negado.', 403));
+    render(<AdminDashboard />);
+    expect(await screen.findByText('Acesso negado.')).toBeInTheDocument();
+  });
+
+  it('displays total users, files and downloads cards (Req 12.1)', async () => {
+    mockGetAdminStats.mockResolvedValue(sampleStats);
+    render(<AdminDashboard />);
+
+    expect(await screen.findByText('Total de Usuários')).toBeInTheDocument();
+    expect(screen.getByText('42')).toBeInTheDocument();
+    expect(screen.getByText('Total de Arquivos')).toBeInTheDocument();
+    expect(screen.getByText('15')).toBeInTheDocument();
+    expect(screen.getByText('Total de Downloads')).toBeInTheDocument();
+    expect(screen.getByText('300')).toBeInTheDocument();
+  });
+
+  it('displays most downloaded files table (Req 12.2)', async () => {
+    mockGetAdminStats.mockResolvedValue(sampleStats);
+    render(<AdminDashboard />);
+
+    expect(await screen.findByText('Arquivos mais baixados')).toBeInTheDocument();
+    expect(screen.getAllByText('relatorio.pdf').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('imagem.png').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('120').length).toBeGreaterThan(0);
+    expect(screen.getAllByText('80').length).toBeGreaterThan(0);
+  });
+
+  it('displays user distribution by plan (Req 12.3)', async () => {
+    mockGetAdminStats.mockResolvedValue(sampleStats);
+    render(<AdminDashboard />);
+
+    expect(await screen.findByText('Distribuição por plano')).toBeInTheDocument();
+    expect(screen.getByText('Free')).toBeInTheDocument();
+    expect(screen.getByText('Premium')).toBeInTheDocument();
+    expect(screen.getByText(/30 usuários/i)).toBeInTheDocument();
+    expect(screen.getByText(/12 usuários/i)).toBeInTheDocument();
+  });
+
+  it('shows empty state when no downloads exist (Req 12.2)', async () => {
+    mockGetAdminStats.mockResolvedValue({ ...sampleStats, mostDownloadedFiles: [] });
+    render(<AdminDashboard />);
+
+    expect(await screen.findByText(/nenhum download registrado/i)).toBeInTheDocument();
+  });
+
+  it('shows empty state when no plan data exists (Req 12.3)', async () => {
+    mockGetAdminStats.mockResolvedValue({ ...sampleStats, usersByPlan: [] });
+    render(<AdminDashboard />);
+
+    expect(await screen.findByText(/nenhum dado de plano disponível/i)).toBeInTheDocument();
+  });
+});
