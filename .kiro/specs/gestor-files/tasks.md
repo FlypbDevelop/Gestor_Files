@@ -682,20 +682,20 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Implementar upgrade/downgrade de plano
     - _Requisitos: 11.1, 11.2, 11.4_
   
-  - [ ]* 31.3 Escrever testes de property para gestão de planos
+  - [x] 31.3 Escrever testes de property para gestão de planos
     - **Property 31: Plan changes update user immediately**
     - **Valida: Requisitos 11.1, 11.2, 11.4**
     - **Property 32: Invalid plan IDs are rejected**
     - **Valida: Requisitos 11.3**
   
-  - [ ]* 31.4 Escrever testes unitários para gestão de usuários
+  - [x] 31.4 Escrever testes unitários para gestão de usuários
     - Testar atualização de plano
     - Testar validação de plano inválido
     - Testar aplicação imediata de novas permissões
     - _Requisitos: 11.1, 11.2, 11.3_
 
 
-- [ ] 32. Checkpoint - Verificar dashboards
+- [x] 32. Checkpoint - Verificar dashboards
   - Testar dashboard admin com estatísticas
   - Testar dashboard de usuário com histórico
   - Testar gestão de planos de usuários
@@ -705,8 +705,8 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 7: PWA (Progressive Web App)
 
-- [ ] 33. Configurar PWA
-  - [ ] 33.1 Criar manifest.json
+- [x] 33. Configurar PWA
+  - [x] 33.1 Criar manifest.json
     - Criar `client/public/manifest.json`
     - Configurar name, short_name, description
     - Configurar theme_color e background_color
@@ -714,12 +714,12 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Adicionar ícones em múltiplas resoluções (192x192, 512x512)
     - _Requisitos: 17.1, 17.4_
   
-  - [ ] 33.2 Criar ícones PWA
+  - [x] 33.2 Criar ícones PWA
     - Gerar ícones em resoluções: 192x192, 512x512
     - Salvar em `client/public/icons/`
     - _Requisitos: 17.4_
   
-  - [ ] 33.3 Criar service worker básico
+  - [x] 33.3 Criar service worker básico
     - Criar `client/public/service-worker.js`
     - Implementar cache de assets estáticos (CSS, JS, imagens)
     - Implementar estratégia cache-first para assets
@@ -727,12 +727,12 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - _Requisitos: 17.2, 17.3_
 
   
-  - [ ] 33.4 Registrar service worker
+  - [x] 33.4 Registrar service worker
     - Adicionar registro de service worker em `client/src/main.tsx`
     - Implementar lógica de atualização de service worker
     - _Requisitos: 17.2_
   
-  - [ ]* 33.5 Testar funcionalidade offline
+  - [x] 33.5 Testar funcionalidade offline
     - Testar que páginas visitadas são acessíveis offline
     - Testar que assets estáticos são servidos do cache
     - _Requisitos: 17.3_
