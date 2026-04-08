@@ -2,14 +2,19 @@ import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
 import FileUpload from '../components/admin/FileUpload';
 import FileManagement from '../components/admin/FileManagement';
+import AdminDashboard from '../components/admin/AdminDashboard';
+import UserManagement from '../components/admin/UserManagement';
 import { Plan, File } from '../types';
 
+type Tab = 'dashboard' | 'arquivos' | 'usuarios';
+
 /**
- * AdminPage - Admin panel with file upload and management.
- * Requirements: 12.1, 12.2, 12.3
+ * AdminPage - Painel admin com abas: Dashboard, Arquivos e Usuários.
+ * Requisitos: 11.1, 11.2, 11.4, 12.1, 12.2, 12.3
  */
 export default function AdminPage() {
   const { user, logout, token } = useAuth();
+  const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
   const [plansError, setPlansError] = useState('');
@@ -41,6 +46,12 @@ export default function AdminPage() {
     setRefreshKey((prev) => prev + 1);
   };
 
+  const tabs: { id: Tab; label: string }[] = [
+    { id: 'dashboard', label: 'Dashboard' },
+    { id: 'arquivos', label: 'Arquivos' },
+    { id: 'usuarios', label: 'Usuários' },
+  ];
+
   return (
     <div className="min-h-screen bg-gray-100">
       <nav className="bg-white shadow-sm">
@@ -61,19 +72,47 @@ export default function AdminPage() {
       </nav>
 
       <main className="max-w-7xl mx-auto px-4 sm:px-6 lg:px-8 py-8 space-y-6">
-        <h1 className="text-2xl font-bold text-gray-800">Gerenciamento de Arquivos</h1>
+        <h1 className="text-2xl font-bold text-gray-800">Painel Administrativo</h1>
 
-        {plansLoading ? (
-          <p className="text-sm text-gray-500">Carregando planos...</p>
-        ) : (
+        {/* Abas de navegação */}
+        <div className="border-b border-gray-200">
+          <nav className="-mb-px flex gap-6" aria-label="Abas do painel admin">
+            {tabs.map((tab) => (
+              <button
+                key={tab.id}
+                onClick={() => setActiveTab(tab.id)}
+                className={`pb-3 text-sm font-medium border-b-2 transition-colors ${
+                  activeTab === tab.id
+                    ? 'border-blue-600 text-blue-600'
+                    : 'border-transparent text-gray-500 hover:text-gray-700 hover:border-gray-300'
+                }`}
+              >
+                {tab.label}
+              </button>
+            ))}
+          </nav>
+        </div>
+
+        {/* Conteúdo das abas */}
+        {activeTab === 'dashboard' && <AdminDashboard />}
+
+        {activeTab === 'arquivos' && (
           <>
-            {plansError && (
-              <p className="text-sm text-red-600">{plansError}</p>
+            {plansLoading ? (
+              <p className="text-sm text-gray-500">Carregando planos...</p>
+            ) : (
+              <>
+                {plansError && (
+                  <p className="text-sm text-red-600">{plansError}</p>
+                )}
+                <FileUpload plans={plans} onUploadComplete={handleUploadComplete} />
+                <FileManagement plans={plans} refreshKey={refreshKey} />
+              </>
             )}
-            <FileUpload plans={plans} onUploadComplete={handleUploadComplete} />
-            <FileManagement plans={plans} refreshKey={refreshKey} />
           </>
         )}
+
+        {activeTab === 'usuarios' && <UserManagement />}
       </main>
     </div>
   );

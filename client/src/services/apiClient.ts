@@ -2,6 +2,7 @@ import axios, { AxiosInstance, AxiosResponse } from 'axios';
 import {
   AuthResponse,
   User,
+  Plan,
   File,
   FilePermissions,
   FileWithDownloadsRemaining,
@@ -136,6 +137,13 @@ class ApiClient {
 
   async updateUserPlan(userId: number, planId: number): Promise<User> {
     const res: AxiosResponse<User> = await this.instance.put(`/users/${userId}/plan`, { planId });
+    return res.data;
+  }
+
+  // ---- Plans ----
+
+  async listPlans(): Promise<Plan[]> {
+    const res: AxiosResponse<Plan[]> = await this.instance.get('/plans');
     return res.data;
   }
 }

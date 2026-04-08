@@ -668,14 +668,14 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar ordenação de histórico
     - _Requisitos: 13.1, 13.2, 13.3, 13.4_
 
-- [ ] 31. Implementar gestão de planos de usuário
-  - [ ] 31.1 Criar endpoints de gestão de usuários
+- [x] 31. Implementar gestão de planos de usuário
+  - [x] 31.1 Criar endpoints de gestão de usuários
     - Adicionar PUT /api/users/:id/plan (protegido, ADMIN only)
     - Implementar controller para atualizar plano do usuário
     - Validar que plano de destino existe
     - _Requisitos: 11.1, 11.2, 11.3, 11.4_
   
-  - [ ] 31.2 Criar componente de gestão de usuários (Admin)
+  - [x] 31.2 Criar componente de gestão de usuários (Admin)
     - Implementar `client/src/components/admin/UserManagement.tsx`
     - Listar todos os usuários com seus planos
     - Adicionar dropdown para alterar plano de cada usuário
