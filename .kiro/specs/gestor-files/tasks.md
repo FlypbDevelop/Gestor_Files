@@ -765,7 +765,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar fluxos completos: registro → login → upload → download
     - _Requisitos: Todos_
   
-  - [ ]* 35.4 Executar testes E2E
+  - [x] 35.4 Executar testes E2E
     - Testar fluxo de usuário: registro, login, listagem, download
     - Testar fluxo de admin: login, upload, configuração de permissões
     - _Requisitos: Todos_
