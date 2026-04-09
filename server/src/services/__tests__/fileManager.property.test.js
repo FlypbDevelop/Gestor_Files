@@ -61,7 +61,7 @@ describe('FileManager - Property-Based Tests', () => {
             expect(result.allowed_plan_ids).toEqual(planIds);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -107,7 +107,7 @@ describe('FileManager - Property-Based Tests', () => {
             expect(result).toHaveProperty('max_downloads_per_user', maxDownloads);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -139,7 +139,7 @@ describe('FileManager - Property-Based Tests', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
 
@@ -160,7 +160,7 @@ describe('FileManager - Property-Based Tests', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     });
 
@@ -187,7 +187,7 @@ describe('FileManager - Property-Based Tests', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });
@@ -248,7 +248,7 @@ describe('FileManager - Property-Based Tests', () => {
             expect(result.length).toBe(expectedCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });

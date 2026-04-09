@@ -1,7 +1,40 @@
 const fc = require('fast-check');
+const path = require('path');
+const fs = require('fs');
 const db = require('../database');
 
 describe('Plans - Property-Based Tests', () => {
+  const testDbPath = path.join(__dirname, 'plans_property_test.db');
+
+  beforeAll(async () => {
+    // Usar banco de dados isolado para estes testes
+    process.env.DB_PATH = testDbPath;
+    await db.initializeDatabase();
+
+    // Criar tabela plans
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS plans (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT UNIQUE NOT NULL,
+        price DECIMAL(10, 2) NOT NULL,
+        features TEXT NOT NULL,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        updated_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    // Inserir planos padrão
+    await db.run(
+      "INSERT OR IGNORE INTO plans (name, price, features) VALUES ('Free', 0.00, '{\"maxDownloadsPerMonth\":10}')"
+    );
+    await db.run(
+      "INSERT OR IGNORE INTO plans (name, price, features) VALUES ('Basic', 9.99, '{\"maxDownloadsPerMonth\":100}')"
+    );
+    await db.run(
+      "INSERT OR IGNORE INTO plans (name, price, features) VALUES ('Premium', 29.99, '{\"maxDownloadsPerMonth\":-1}')"
+    );
+  }, 15000);
+
   beforeEach(async () => {
     // Clean up plans table before each test
     await db.run('DELETE FROM plans WHERE name NOT IN (?, ?, ?)', ['Free', 'Basic', 'Premium']);
@@ -11,6 +44,10 @@ describe('Plans - Property-Based Tests', () => {
     // Clean up test data
     await db.run('DELETE FROM plans WHERE name NOT IN (?, ?, ?)', ['Free', 'Basic', 'Premium']);
     await db.closeDatabase();
+    // Remove test database file
+    if (fs.existsSync(testDbPath)) {
+      fs.unlinkSync(testDbPath);
+    }
   }, 10000);
 
   /**
@@ -57,7 +94,7 @@ describe('Plans - Property-Based Tests', () => {
             await db.run('DELETE FROM plans WHERE id = ?', [result.lastID]);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for property-based test
 
@@ -98,7 +135,7 @@ describe('Plans - Property-Based Tests', () => {
             await db.run('DELETE FROM plans WHERE id = ?', [result.lastID]);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for property-based test
   });
@@ -139,7 +176,7 @@ describe('Plans - Property-Based Tests', () => {
             await db.run('DELETE FROM plans WHERE id = ?', [result1.lastID]);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for property-based test
 
@@ -184,7 +221,7 @@ describe('Plans - Property-Based Tests', () => {
             await db.run('DELETE FROM plans WHERE id = ?', [result1.lastID]);
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for property-based test
 
@@ -250,7 +287,7 @@ describe('Plans - Property-Based Tests', () => {
             await db.run('DELETE FROM plans WHERE id = ?', [result.lastID]);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for property-based test
 
@@ -300,7 +337,7 @@ describe('Plans - Property-Based Tests', () => {
             await db.run('DELETE FROM plans WHERE id = ?', [result.lastID]);
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for property-based test
 

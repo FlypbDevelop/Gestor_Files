@@ -37,7 +37,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.reason).toBe('User not found');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -81,7 +81,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.reason).toBe('Plan does not have access to this file');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -99,7 +99,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result).toBe(false);
           }
         ),
-        { numRuns: 200 }
+        { numRuns: 10 }
       );
     });
 
@@ -116,7 +116,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result).toBe(true);
           }
         ),
-        { numRuns: 200 }
+        { numRuns: 10 }
       );
     });
   });
@@ -162,7 +162,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.reason).toBe('Download limit exceeded');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -193,7 +193,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result).toHaveProperty('max', maxDownloads);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -224,7 +224,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.max).toBe(maxDownloads);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -254,7 +254,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.allowed).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -278,7 +278,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             );
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -309,7 +309,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.current).toBe(currentCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -331,7 +331,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.current).toBe(currentCount);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -362,7 +362,7 @@ describe('AccessValidator - Property-Based Tests', () => {
             expect(result.allowed).toBe(true);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });

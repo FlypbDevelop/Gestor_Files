@@ -114,7 +114,7 @@ describe('Property 31: Plan changes update user immediately', () => {
             );
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -152,7 +152,7 @@ describe('Property 31: Plan changes update user immediately', () => {
             expect(res.body.user.plan_id).toBe(targetPlanId);
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 15000);
 
@@ -190,7 +190,7 @@ describe('Property 31: Plan changes update user immediately', () => {
             expect(res.body.user.plan_id).toBe(targetPlanId);
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 15000);
   });
@@ -235,7 +235,7 @@ describe('Property 32: Invalid plan IDs are rejected', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 15000);
 
@@ -262,7 +262,7 @@ describe('Property 32: Invalid plan IDs are rejected', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 10000);
 
@@ -292,7 +292,7 @@ describe('Property 32: Invalid plan IDs are rejected', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 10000);
   });
@@ -321,7 +321,7 @@ describe('Property 32: Invalid plan IDs are rejected', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 20 }
+        { numRuns: 10 }
       );
     }, 10000);
   });

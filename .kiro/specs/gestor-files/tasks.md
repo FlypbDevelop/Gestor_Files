@@ -737,7 +737,7 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar que assets estáticos são servidos do cache
     - _Requisitos: 17.3_
 
-- [ ] 34. Checkpoint - Verificar PWA
+- [x] 34. Checkpoint - Verificar PWA
   - Testar instalação do app no dispositivo
   - Testar funcionamento offline
   - Verificar que ícones aparecem corretamente
@@ -746,21 +746,21 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
 
 ### Passo 8: Testes Finais e Refinamentos
 
-- [ ] 35. Executar suite completa de testes
-  - [ ] 35.1 Executar todos os testes unitários
+- [x] 35. Executar suite completa de testes
+  - [x] 35.1 Executar todos os testes unitários
     - Rodar testes do backend (Jest)
     - Rodar testes do frontend (Vitest)
     - Verificar cobertura mínima de 80%
     - _Requisitos: Todos_
   
-  - [ ] 35.2 Executar todos os testes de property
+  - [x] 35.2 Executar todos os testes de property
     - Rodar testes de property do backend (fast-check)
     - Rodar testes de property do frontend (fast-check)
     - Verificar que todas as 41 properties passam
     - _Requisitos: Todos_
 
   
-  - [ ]* 35.3 Executar testes de integração
+  - [x] 35.3 Executar testes de integração
     - Testar todos os endpoints da API
     - Testar fluxos completos: registro → login → upload → download
     - _Requisitos: Todos_

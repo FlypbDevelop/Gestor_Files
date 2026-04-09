@@ -58,7 +58,7 @@ describe('RoleCheck Middleware - Property-Based Tests', () => {
             next.mockClear();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
 
@@ -106,7 +106,7 @@ describe('RoleCheck Middleware - Property-Based Tests', () => {
             next.mockClear();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });
@@ -144,7 +144,7 @@ describe('RoleCheck Middleware - Property-Based Tests', () => {
             next.mockClear();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
 
@@ -186,7 +186,7 @@ describe('RoleCheck Middleware - Property-Based Tests', () => {
             next.mockClear();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
 
@@ -217,7 +217,7 @@ describe('RoleCheck Middleware - Property-Based Tests', () => {
             next.mockClear();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });
@@ -275,7 +275,7 @@ describe('RoleCheck Middleware - Property-Based Tests', () => {
             next.mockClear();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });

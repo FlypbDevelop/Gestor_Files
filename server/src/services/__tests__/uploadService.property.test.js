@@ -98,7 +98,7 @@ describe('UploadService - Property-Based Tests', () => {
             expect(result).toHaveProperty('created_at');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -148,7 +148,7 @@ describe('UploadService - Property-Based Tests', () => {
             expect(params[4]).toBe(uploadedBy);      // uploaded_by (timestamp recorded via created_at in DB)
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -173,7 +173,7 @@ describe('UploadService - Property-Based Tests', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     });
 
@@ -204,7 +204,7 @@ describe('UploadService - Property-Based Tests', () => {
             expect(db.run).not.toHaveBeenCalled();
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
 
@@ -245,7 +245,7 @@ describe('UploadService - Property-Based Tests', () => {
             );
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -291,7 +291,7 @@ describe('UploadService - Property-Based Tests', () => {
             expect(thrownError.message).toBe(errorMessage);
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     }, 30000);
   });

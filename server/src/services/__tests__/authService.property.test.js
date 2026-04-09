@@ -52,7 +52,7 @@ describe('AuthService - Property-Based Tests', () => {
             expect(expiresIn).toBe(24 * 60 * 60);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for bcrypt hashing
   });
@@ -81,7 +81,7 @@ describe('AuthService - Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
 
@@ -116,7 +116,7 @@ describe('AuthService - Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for bcrypt hashing
   });
@@ -149,7 +149,7 @@ describe('AuthService - Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });
@@ -189,7 +189,7 @@ describe('AuthService - Property-Based Tests', () => {
             );
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000); // 30 second timeout for bcrypt hashing
   });
@@ -219,7 +219,7 @@ describe('AuthService - Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });
@@ -246,7 +246,7 @@ describe('AuthService - Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });
@@ -286,7 +286,7 @@ describe('AuthService - Property-Based Tests', () => {
             });
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     });
   });

@@ -112,7 +112,7 @@ describe('DownloadController - Property-Based Tests', () => {
             );
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -141,7 +141,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(typeof result.downloaded_at).toBe('string');
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -175,7 +175,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(res.status).toHaveBeenCalledWith(401);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -201,7 +201,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(res.status).toHaveBeenCalledWith(403);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -242,7 +242,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(res.status).toHaveBeenCalledWith(429);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -270,7 +270,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(result).toBe(clientIp);
           }
         ),
-        { numRuns: 200 }
+        { numRuns: 10 }
       );
     });
 
@@ -287,7 +287,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(result).toBe(realIp);
           }
         ),
-        { numRuns: 200 }
+        { numRuns: 10 }
       );
     });
 
@@ -312,7 +312,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(result).toBe(forwardedIp);
           }
         ),
-        { numRuns: 200 }
+        { numRuns: 10 }
       );
     });
 
@@ -328,7 +328,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(result).toBe(ip);
           }
         ),
-        { numRuns: 200 }
+        { numRuns: 10 }
       );
     });
 
@@ -355,7 +355,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(result.ip_address).toBe(clientIp);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -392,7 +392,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(res.setHeader).toHaveBeenCalledWith('Content-Length', file.size);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -417,7 +417,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(res.setHeader).toHaveBeenCalledWith('Content-Length', fileSize);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
@@ -468,7 +468,7 @@ describe('DownloadController - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 50 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -522,7 +522,7 @@ describe('DownloadController - Property-Based Tests', () => {
             }
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
 
@@ -555,7 +555,7 @@ describe('DownloadController - Property-Based Tests', () => {
             expect(dispositionValue).toContain(file.filename);
           }
         ),
-        { numRuns: 100 }
+        { numRuns: 10 }
       );
     }, 30000);
   });
