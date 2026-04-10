@@ -1,5 +1,8 @@
 const authService = require('../services/authService');
 const db = require('../db/database');
+const { createLogger } = require('../utils/logger');
+
+const logger = createLogger('authController');
 
 /**
  * Auth Controller
@@ -33,6 +36,8 @@ async function register(req, res) {
     // Generate token for immediate login
     const { token } = await authService.login(email, password);
 
+    logger.info('user_registered', { userId: user.id, email: user.email });
+
     res.status(201).json({
       token,
       user
@@ -58,7 +63,7 @@ async function register(req, res) {
     }
 
     // Handle unexpected errors
-    console.error('Registration error:', error);
+    logger.error('register_error', { message: error.message });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
@@ -91,10 +96,13 @@ async function login(req, res) {
     // Authenticate via AuthService
     const result = await authService.login(email, password);
 
+    logger.info('user_login', { email });
+
     res.status(200).json(result);
   } catch (error) {
     // Handle authentication errors
     if (error.statusCode === 401) {
+      logger.warn('login_failed', { email: req.body?.email });
       return res.status(401).json({
         error: {
           code: error.code,
@@ -104,7 +112,7 @@ async function login(req, res) {
     }
 
     // Handle unexpected errors
-    console.error('Login error:', error);
+    logger.error('login_error', { message: error.message });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
@@ -142,7 +150,7 @@ async function getCurrentUser(req, res) {
 
     res.status(200).json({ user });
   } catch (error) {
-    console.error('Get current user error:', error);
+    logger.error('get_current_user_error', { message: error.message, userId: req.user?.userId });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',

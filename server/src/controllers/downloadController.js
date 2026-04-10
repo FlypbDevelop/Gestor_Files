@@ -1,5 +1,8 @@
 const downloadService = require('../services/downloadController');
 const db = require('../db/database');
+const { createLogger } = require('../utils/logger');
+
+const logger = createLogger('downloadController');
 
 /**
  * Download Controller
@@ -27,11 +30,13 @@ async function downloadFile(req, res) {
     const userId = req.user.userId;
     const ipAddress = downloadService.getRealIpAddress(req);
 
+    logger.info('download_attempt', { userId, fileId, ipAddress });
+
     // processDownload handles all validation, logging, and streaming
     // It writes the response directly (including error responses)
     await downloadService.processDownload(userId, fileId, ipAddress, res);
   } catch (error) {
-    console.error('Download error:', error);
+    logger.error('download_error', { message: error.message, userId: req.user?.userId });
     if (!res.headersSent) {
       res.status(500).json({
         error: { code: 'INTERNAL_ERROR', message: 'An error occurred during download' }
@@ -62,7 +67,7 @@ async function getDownloadHistory(req, res) {
 
     res.status(200).json({ downloads });
   } catch (error) {
-    console.error('Download history error:', error);
+    logger.error('download_history_error', { message: error.message, userId: req.user?.userId });
     res.status(500).json({
       error: { code: 'INTERNAL_ERROR', message: 'An error occurred while fetching download history' }
     });

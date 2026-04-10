@@ -16,6 +16,17 @@ export default defineConfig(({ mode }) => {
         }
       }
     },
+    build: {
+      rollupOptions: {
+        output: {
+          // Separa vendor (react, react-dom, react-router) em chunk próprio
+          manualChunks: {
+            vendor: ['react', 'react-dom', 'react-router-dom'],
+            axios: ['axios'],
+          }
+        }
+      }
+    },
     test: {
       globals: true,
       environment: 'jsdom',

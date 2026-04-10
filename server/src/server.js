@@ -4,7 +4,9 @@ const cors = require('cors');
 const helmet = require('helmet');
 const { initializeDatabase } = require('./db/database');
 const MigrationRunner = require('./db/MigrationRunner');
+const { createLogger } = require('./utils/logger');
 
+const logger = createLogger('server');
 const app = express();
 const PORT = process.env.PORT || 3000;
 
@@ -13,6 +15,12 @@ app.use(helmet());
 app.use(cors());
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
+
+// Log de requisições HTTP
+app.use((req, _res, next) => {
+  logger.info('request', { method: req.method, path: req.path });
+  next();
+});
 
 // Health check
 app.get('/health', (req, res) => {
@@ -27,9 +35,16 @@ app.use('/api/users', require('./routes/users'));
 // app.use('/api/plans', require('./routes/plans'));
 app.use('/api/dashboard', require('./routes/dashboard'));
 
-// Error handler
+// Error handler global
 app.use((err, req, res, next) => {
-  console.error(err.stack);
+  logger.error('unhandled_error', {
+    message: err.message,
+    code: err.code,
+    status: err.status,
+    path: req.path,
+    method: req.method,
+    stack: process.env.NODE_ENV === 'development' ? err.stack : undefined,
+  });
   res.status(err.status || 500).json({
     error: {
       code: err.code || 'INTERNAL_ERROR',
@@ -42,16 +57,16 @@ app.use((err, req, res, next) => {
 // Initialize database and run migrations
 async function startServer() {
   try {
-    console.log('Initializing database...');
+    logger.info('database_init', { message: 'Initializing database...' });
     await initializeDatabase();
-    
-    console.log('Running migrations...');
+
+    logger.info('migrations_start', { message: 'Running migrations...' });
     const runner = new MigrationRunner();
     await runner.runMigrations();
-    
-    console.log('Database ready');
+
+    logger.info('database_ready', { message: 'Database ready' });
   } catch (error) {
-    console.error('Failed to initialize database:', error);
+    logger.error('startup_failed', { message: error.message, stack: error.stack });
     process.exit(1);
   }
 }
@@ -60,8 +75,7 @@ async function startServer() {
 if (process.env.NODE_ENV !== 'test') {
   startServer().then(() => {
     app.listen(PORT, () => {
-      console.log(`Server running on port ${PORT}`);
-      console.log(`Environment: ${process.env.NODE_ENV || 'development'}`);
+      logger.info('server_started', { port: PORT, env: process.env.NODE_ENV || 'development' });
     });
   });
 }

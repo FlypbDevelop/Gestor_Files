@@ -1,5 +1,8 @@
 const uploadService = require('../services/uploadService');
 const fileManager = require('../services/fileManager');
+const { createLogger } = require('../utils/logger');
+
+const logger = createLogger('fileController');
 
 /**
  * File Controller
@@ -26,6 +29,8 @@ async function uploadFile(req, res) {
 
     const fileRecord = await uploadService.processUpload(req.file, req.user.userId);
 
+    logger.info('file_uploaded', { fileId: fileRecord.id, filename: fileRecord.filename, uploadedBy: req.user.userId });
+
     res.status(201).json({ file: fileRecord });
   } catch (error) {
     if (error.statusCode === 400) {
@@ -37,7 +42,7 @@ async function uploadFile(req, res) {
       });
     }
 
-    console.error('Upload error:', error);
+    logger.error('upload_error', { message: error.message, userId: req.user?.userId });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
@@ -112,7 +117,7 @@ async function updatePermissions(req, res) {
       });
     }
 
-    console.error('Update permissions error:', error);
+    logger.error('update_permissions_error', { message: error.message, fileId: req.params?.id });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
@@ -143,6 +148,8 @@ async function deleteFile(req, res) {
 
     await fileManager.deleteFile(fileId);
 
+    logger.info('file_deleted', { fileId, deletedBy: req.user?.userId });
+
     res.status(200).json({ message: 'File deleted successfully' });
   } catch (error) {
     if (error.statusCode === 404) {
@@ -154,7 +161,7 @@ async function deleteFile(req, res) {
       });
     }
 
-    console.error('Delete file error:', error);
+    logger.error('delete_file_error', { message: error.message, fileId: req.params?.id });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',
@@ -184,7 +191,7 @@ async function listFiles(req, res) {
 
     res.status(200).json({ files: parsedFiles });
   } catch (error) {
-    console.error('List files error:', error);
+    logger.error('list_files_error', { message: error.message });
     res.status(500).json({
       error: {
         code: 'INTERNAL_ERROR',

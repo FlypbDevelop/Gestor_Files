@@ -770,25 +770,25 @@ Este plano implementa um sistema completo de gerenciamento de arquivos com contr
     - Testar fluxo de admin: login, upload, configuração de permissões
     - _Requisitos: Todos_
 
-- [ ] 36. Refinamentos finais
-  - [ ] 36.1 Adicionar tratamento de erros global
+- [x] 36. Refinamentos finais
+  - [x] 36.1 Adicionar tratamento de erros global
     - Implementar error boundary no React
     - Implementar toast notifications para erros
     - Melhorar mensagens de erro para usuário final
     - _Requisitos: Todos_
   
-  - [ ] 36.2 Otimizar performance
+  - [x] 36.2 Otimizar performance
     - Implementar code splitting por rota
     - Implementar lazy loading de componentes
     - Otimizar queries do banco de dados
     - _Requisitos: 14.1, 14.2_
   
-  - [ ] 36.3 Adicionar logging e monitoramento
+  - [x] 36.3 Adicionar logging e monitoramento
     - Implementar logging de erros no backend
     - Implementar logging de eventos importantes
     - _Requisitos: 8.1_
 
-- [ ] 37. Checkpoint final
+- [x] 37. Checkpoint final
   - Executar todos os testes e verificar que passam
   - Testar sistema completo end-to-end
   - Verificar que todos os requisitos foram implementados
