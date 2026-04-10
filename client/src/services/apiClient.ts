@@ -64,15 +64,20 @@ class ApiClient {
   }
 
   async getCurrentUser(): Promise<User> {
-    const res: AxiosResponse<User> = await this.instance.get('/auth/me');
-    return res.data;
+    const res: AxiosResponse<{ user: User }> = await this.instance.get('/auth/me');
+    return res.data.user;
   }
 
   // ---- Files ----
 
   async listFiles(): Promise<FileWithDownloadsRemaining[]> {
-    const res: AxiosResponse<FileWithDownloadsRemaining[]> = await this.instance.get('/files');
+    const res: AxiosResponse<FileWithDownloadsRemaining[]> = await this.instance.get('/files/my');
     return res.data;
+  }
+
+  async listAllFiles(): Promise<File[]> {
+    const res: AxiosResponse<{ files: File[] }> = await this.instance.get('/files');
+    return res.data.files;
   }
 
   async uploadFile(file: globalThis.File, permissions: FilePermissions): Promise<File> {
@@ -119,25 +124,48 @@ class ApiClient {
   // ---- Dashboard / Admin ----
 
   async getAdminStats(): Promise<AdminStats> {
-    const res: AxiosResponse<AdminStats> = await this.instance.get('/dashboard/admin');
-    return res.data;
+    const res: AxiosResponse<{
+      stats: { totalUsers: number; totalFiles: number; totalDownloads: number };
+      mostDownloadedFiles: MostDownloadedFile[];
+      userDistributionByPlan: { plan_name: string; user_count: number }[];
+    }> = await this.instance.get('/dashboard/admin');
+    const { stats, mostDownloadedFiles, userDistributionByPlan } = res.data;
+    return {
+      totalUsers: stats.totalUsers,
+      totalFiles: stats.totalFiles,
+      totalDownloads: stats.totalDownloads,
+      mostDownloadedFiles,
+      usersByPlan: userDistributionByPlan.map((p) => ({
+        plan_name: p.plan_name,
+        user_count: p.user_count,
+      })),
+    };
   }
 
   async getUserDashboard(): Promise<UserDashboard> {
-    const res: AxiosResponse<UserDashboard> = await this.instance.get('/dashboard/user');
-    return res.data;
+    const res: AxiosResponse<{
+      currentPlan: { id: number; name: string; price: number; features: unknown };
+      downloadHistory: DownloadHistoryEntry[];
+      totalDownloads: number;
+    }> = await this.instance.get('/dashboard/user');
+    const { currentPlan, downloadHistory, totalDownloads } = res.data;
+    return {
+      plan: currentPlan as unknown as Plan,
+      downloadHistory,
+      totalDownloads,
+    };
   }
 
   // ---- Users (admin) ----
 
   async listAllUsers(): Promise<User[]> {
-    const res: AxiosResponse<User[]> = await this.instance.get('/users');
-    return res.data;
+    const res: AxiosResponse<{ users: User[] }> = await this.instance.get('/users');
+    return res.data.users;
   }
 
   async updateUserPlan(userId: number, planId: number): Promise<User> {
-    const res: AxiosResponse<User> = await this.instance.put(`/users/${userId}/plan`, { planId });
-    return res.data;
+    const res: AxiosResponse<{ user: User }> = await this.instance.put(`/users/${userId}/plan`, { planId });
+    return res.data.user;
   }
 
   // ---- Plans ----

@@ -29,6 +29,13 @@ router.get(
   fileController.listFiles
 );
 
+// GET /api/files/my - List files accessible to current user's plan
+router.get(
+  '/my',
+  authMiddleware,
+  fileController.listMyFiles
+);
+
 // PUT /api/files/:id/permissions - Update file permissions (ADMIN only)
 router.put(
   '/:id/permissions',

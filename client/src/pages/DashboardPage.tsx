@@ -1,4 +1,5 @@
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
 import UserDashboard from '../components/user/UserDashboard';
 import FileList from '../components/user/FileList';
 
@@ -7,7 +8,8 @@ import FileList from '../components/user/FileList';
  * Requisitos: 13.1, 13.2, 13.3, 13.4, 14.4
  */
 export default function DashboardPage() {
-  const { user, logout } = useAuth();
+  const { user, logout, isAdmin } = useAuth();
+  const navigate = useNavigate();
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -18,6 +20,14 @@ export default function DashboardPage() {
             <span className="text-xl font-bold text-gray-800">Gestor de Arquivos</span>
             <div className="flex items-center gap-4">
               <span className="hidden sm:block text-sm text-gray-600">{user?.name}</span>
+              {isAdmin && (
+                <button
+                  onClick={() => navigate('/admin')}
+                  className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+                >
+                  Painel Admin
+                </button>
+              )}
               <button
                 onClick={logout}
                 className="text-sm text-red-600 hover:text-red-800 font-medium"

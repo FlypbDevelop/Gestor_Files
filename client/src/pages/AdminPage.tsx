@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
 import { useAuth } from '../contexts/AuthContext';
+import { useNavigate } from 'react-router-dom';
+import apiClient from '../services/apiClient';
 import FileUpload from '../components/admin/FileUpload';
 import FileManagement from '../components/admin/FileManagement';
 import AdminDashboard from '../components/admin/AdminDashboard';
@@ -13,7 +15,8 @@ type Tab = 'dashboard' | 'arquivos' | 'usuarios';
  * Requisitos: 11.1, 11.2, 11.4, 12.1, 12.2, 12.3
  */
 export default function AdminPage() {
-  const { user, logout, token } = useAuth();
+  const { user, logout } = useAuth();
+  const navigate = useNavigate();
   const [activeTab, setActiveTab] = useState<Tab>('dashboard');
   const [plans, setPlans] = useState<Plan[]>([]);
   const [plansLoading, setPlansLoading] = useState(true);
@@ -25,11 +28,7 @@ export default function AdminPage() {
       setPlansLoading(true);
       setPlansError('');
       try {
-        const res = await fetch('/api/plans', {
-          headers: { Authorization: `Bearer ${token}` },
-        });
-        if (!res.ok) throw new Error(`Erro ao carregar planos (${res.status})`);
-        const data: Plan[] = await res.json();
+        const data = await apiClient.listPlans();
         setPlans(data);
       } catch (err) {
         const message = err instanceof Error ? err.message : 'Erro ao carregar planos.';
@@ -40,7 +39,7 @@ export default function AdminPage() {
     };
 
     fetchPlans();
-  }, [token]);
+  }, []);
 
   const handleUploadComplete = (_file: File) => {
     setRefreshKey((prev) => prev + 1);
@@ -60,6 +59,12 @@ export default function AdminPage() {
             <span className="text-xl font-bold text-gray-800">Gestor de Arquivos</span>
             <div className="flex items-center gap-4">
               <span className="hidden sm:block text-sm text-gray-600">{user?.name} (Admin)</span>
+              <button
+                onClick={() => navigate('/dashboard')}
+                className="text-sm text-blue-600 hover:text-blue-800 font-medium"
+              >
+                Dashboard
+              </button>
               <button
                 onClick={logout}
                 className="text-sm text-red-600 hover:text-red-800 font-medium"

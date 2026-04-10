@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import apiClient from '../../services/apiClient';
-import { FileWithDownloadsRemaining, Plan, FilePermissions, ApiRequestError } from '../../types';
+import { File, Plan, FilePermissions, ApiRequestError } from '../../types';
 
 interface FileManagementProps {
   plans: Plan[];
@@ -22,7 +22,7 @@ interface EditModalState {
  * Requirements: 5.1, 5.2
  */
 export default function FileManagement({ plans, refreshKey }: FileManagementProps) {
-  const [files, setFiles] = useState<FileWithDownloadsRemaining[]>([]);
+  const [files, setFiles] = useState<File[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
   const [deleteErrors, setDeleteErrors] = useState<Record<number, string>>({});
@@ -33,7 +33,7 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
     setLoading(true);
     setError('');
     try {
-      const data = await apiClient.listFiles();
+      const data = await apiClient.listAllFiles();
       setFiles(data);
     } catch (err) {
       const message = err instanceof Error ? err.message : 'Erro ao carregar arquivos.';

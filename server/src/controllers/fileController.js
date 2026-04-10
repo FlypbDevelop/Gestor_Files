@@ -201,9 +201,33 @@ async function listFiles(req, res) {
   }
 }
 
+/**
+ * List files accessible to the current user based on their plan
+ * GET /api/files/my
+ * @param {Express.Request} req - Request with req.user
+ * @param {Express.Response} res - Response
+ */
+async function listMyFiles(req, res) {
+  try {
+    const db = require('../db/database');
+    const user = await db.get('SELECT plan_id FROM users WHERE id = ?', [req.user.userId]);
+    if (!user) {
+      return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } });
+    }
+    const files = await fileManager.listFilesForPlan(user.plan_id, req.user.userId);
+    res.status(200).json(files);
+  } catch (error) {
+    logger.error('list_my_files_error', { message: error.message });
+    res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'An error occurred while listing files' }
+    });
+  }
+}
+
 module.exports = {
   uploadFile,
   updatePermissions,
   deleteFile,
-  listFiles
+  listFiles,
+  listMyFiles
 };
