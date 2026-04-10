@@ -8,13 +8,16 @@ interface FileUploadProps {
 }
 
 /**
- * FileUpload - Admin component for uploading files with plan permissions.
+ * FileUpload - Componente admin para envio de arquivos com metadados e permissões de plano.
  * Requirements: 4.1, 5.1, 5.2
  */
 export default function FileUpload({ plans, onUploadComplete }: FileUploadProps) {
   const [selectedFile, setSelectedFile] = useState<globalThis.File | null>(null);
   const [selectedPlanIds, setSelectedPlanIds] = useState<number[]>([]);
   const [maxDownloads, setMaxDownloads] = useState('');
+  const [customName, setCustomName] = useState('');
+  const [description, setDescription] = useState('');
+  const [version, setVersion] = useState('');
   const [uploading, setUploading] = useState(false);
   const [successMessage, setSuccessMessage] = useState('');
   const [errorMessage, setErrorMessage] = useState('');
@@ -33,11 +36,6 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
     setSelectedPlanIds((prev) =>
       prev.includes(planId) ? prev.filter((id) => id !== planId) : [...prev, planId]
     );
-    setValidationError('');
-  };
-
-  const handleMaxDownloadsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setMaxDownloads(e.target.value);
     setValidationError('');
   };
 
@@ -64,6 +62,9 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
     setSelectedFile(null);
     setSelectedPlanIds([]);
     setMaxDownloads('');
+    setCustomName('');
+    setDescription('');
+    setVersion('');
     setValidationError('');
     if (fileInputRef.current) {
       fileInputRef.current.value = '';
@@ -85,8 +86,12 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
       const uploaded = await apiClient.uploadFile(selectedFile!, {
         allowedPlanIds: selectedPlanIds,
         maxDownloadsPerUser,
+        customName: customName.trim() || undefined,
+        description: description.trim() || undefined,
+        version: version.trim() || undefined,
       });
-      setSuccessMessage(`Arquivo "${uploaded.filename}" enviado com sucesso.`);
+      const displayName = uploaded.custom_name || uploaded.filename;
+      setSuccessMessage(`Arquivo "${displayName}" enviado com sucesso.`);
       resetForm();
       onUploadComplete(uploaded);
     } catch (err) {
@@ -126,6 +131,54 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
           )}
         </div>
 
+        {/* Nome personalizado */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Nome de exibição{' '}
+            <span className="text-gray-400 font-normal">(opcional — substitui o nome do arquivo)</span>
+          </label>
+          <input
+            type="text"
+            value={customName}
+            onChange={(e) => setCustomName(e.target.value)}
+            disabled={uploading}
+            placeholder="Ex: Manual do Usuário v2"
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          />
+        </div>
+
+        {/* Versão */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Versão{' '}
+            <span className="text-gray-400 font-normal">(opcional)</span>
+          </label>
+          <input
+            type="text"
+            value={version}
+            onChange={(e) => setVersion(e.target.value)}
+            disabled={uploading}
+            placeholder="Ex: 1.0, 2.3.1"
+            className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          />
+        </div>
+
+        {/* Descrição */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Descrição{' '}
+            <span className="text-gray-400 font-normal">(opcional — exibida ao usuário antes do download)</span>
+          </label>
+          <textarea
+            value={description}
+            onChange={(e) => setDescription(e.target.value)}
+            disabled={uploading}
+            rows={3}
+            placeholder="Descreva o conteúdo do arquivo para que o usuário saiba o que está baixando..."
+            className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 resize-none"
+          />
+        </div>
+
         {/* Plan selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -162,29 +215,17 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
             min="1"
             step="1"
             value={maxDownloads}
-            onChange={handleMaxDownloadsChange}
+            onChange={(e) => { setMaxDownloads(e.target.value); setValidationError(''); }}
             disabled={uploading}
             placeholder="Ilimitado"
             className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
           />
         </div>
 
-        {/* Validation error */}
-        {validationError && (
-          <p className="text-sm text-red-600">{validationError}</p>
-        )}
+        {validationError && <p className="text-sm text-red-600">{validationError}</p>}
+        {successMessage && <p className="text-sm text-green-600">{successMessage}</p>}
+        {errorMessage && <p className="text-sm text-red-600">{errorMessage}</p>}
 
-        {/* Success message */}
-        {successMessage && (
-          <p className="text-sm text-green-600">{successMessage}</p>
-        )}
-
-        {/* Error message */}
-        {errorMessage && (
-          <p className="text-sm text-red-600">{errorMessage}</p>
-        )}
-
-        {/* Submit button */}
         <button
           type="submit"
           disabled={uploading}

@@ -41,6 +41,9 @@ export interface File {
   uploaded_by: number;
   allowed_plan_ids: number[];
   max_downloads_per_user: number | null; // null = unlimited
+  custom_name: string | null;
+  description: string | null;
+  version: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -56,6 +59,9 @@ export interface Download {
 export interface FilePermissions {
   allowedPlanIds: number[];
   maxDownloadsPerUser: number | null;
+  customName?: string | null;
+  description?: string | null;
+  version?: string | null;
 }
 
 // ---- Extended / Derived Types ----

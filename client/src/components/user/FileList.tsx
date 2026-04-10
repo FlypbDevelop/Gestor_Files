@@ -3,7 +3,8 @@ import apiClient from '../../services/apiClient';
 import { FileWithDownloadsRemaining, ApiRequestError } from '../../types';
 
 /**
- * FileList - Lists files available to the current user based on their plan.
+ * FileList - Lista os arquivos disponíveis para o usuário com base no plano.
+ * Exibe nome, versão e descrição (tooltip) antes do download.
  * Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3
  */
 export default function FileList() {
@@ -12,12 +13,12 @@ export default function FileList() {
   const [error, setError] = useState('');
   const [downloadErrors, setDownloadErrors] = useState<Record<number, string>>({});
   const [downloading, setDownloading] = useState<Record<number, boolean>>({});
+  const [expandedDesc, setExpandedDesc] = useState<Record<number, boolean>>({});
 
   const fetchFiles = useCallback(async () => {
     setLoading(true);
     setError('');
     try {
-      // Req 6.3: ordered by creation date descending (handled by API)
       const data = await apiClient.listFiles();
       setFiles(data);
     } catch (err) {
@@ -39,7 +40,6 @@ export default function FileList() {
     try {
       const blob = await apiClient.downloadFile(file.id);
 
-      // Create a temporary Blob URL and trigger browser download
       const url = URL.createObjectURL(blob);
       const anchor = document.createElement('a');
       anchor.href = url;
@@ -49,7 +49,6 @@ export default function FileList() {
       document.body.removeChild(anchor);
       URL.revokeObjectURL(url);
 
-      // Refresh list so downloads_remaining is updated (Req 6.2)
       await fetchFiles();
     } catch (err) {
       let message = 'Erro ao baixar arquivo.';
@@ -79,6 +78,12 @@ export default function FileList() {
     return String(remaining);
   };
 
+  const getDisplayName = (file: FileWithDownloadsRemaining): string =>
+    file.custom_name || file.filename;
+
+  const toggleDesc = (fileId: number) =>
+    setExpandedDesc((prev) => ({ ...prev, [fileId]: !prev[fileId] }));
+
   if (loading) {
     return (
       <div className="flex justify-center items-center py-12">
@@ -103,9 +108,13 @@ export default function FileList() {
     );
   }
 
+  const isDisabled = (file: FileWithDownloadsRemaining) =>
+    downloading[file.id] ||
+    (file.downloads_remaining !== null && file.downloads_remaining <= 0);
+
   return (
     <div className="space-y-3">
-      {/* Desktop table - hidden on small screens */}
+      {/* Desktop table */}
       <div className="hidden sm:block overflow-x-auto">
         <table className="min-w-full bg-white rounded-lg shadow-sm border border-gray-200">
           <thead>
@@ -120,8 +129,34 @@ export default function FileList() {
           <tbody className="divide-y divide-gray-100">
             {files.map((file) => (
               <tr key={file.id} className="hover:bg-gray-50 transition-colors">
-                <td className="px-4 py-3 text-sm font-medium text-gray-800 max-w-xs truncate">
-                  {file.filename}
+                <td className="px-4 py-3 text-sm max-w-xs">
+                  {/* Nome + versão */}
+                  <div className="flex items-center gap-2">
+                    <span className="font-medium text-gray-800 truncate">
+                      {getDisplayName(file)}
+                    </span>
+                    {file.version && (
+                      <span className="shrink-0 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-mono">
+                        v{file.version}
+                      </span>
+                    )}
+                  </div>
+                  {/* Descrição expansível */}
+                  {file.description && (
+                    <div className="mt-1">
+                      <button
+                        onClick={() => toggleDesc(file.id)}
+                        className="text-xs text-blue-500 hover:text-blue-700 underline-offset-2 hover:underline"
+                      >
+                        {expandedDesc[file.id] ? 'Ocultar descrição' : 'Ver descrição'}
+                      </button>
+                      {expandedDesc[file.id] && (
+                        <p className="mt-1 text-xs text-gray-600 bg-gray-50 rounded p-2 border border-gray-100">
+                          {file.description}
+                        </p>
+                      )}
+                    </div>
+                  )}
                 </td>
                 <td className="px-4 py-3 text-sm text-gray-500">{file.mime_type}</td>
                 <td className="px-4 py-3 text-sm text-gray-500">{formatSize(file.size)}</td>
@@ -132,10 +167,8 @@ export default function FileList() {
                   <div className="flex flex-col items-end gap-1">
                     <button
                       onClick={() => handleDownload(file)}
-                      disabled={
-                        downloading[file.id] ||
-                        (file.downloads_remaining !== null && file.downloads_remaining <= 0)
-                      }
+                      disabled={isDisabled(file)}
+                      title={file.description || getDisplayName(file)}
                       className="px-3 py-1.5 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
                       {downloading[file.id] ? 'Baixando...' : 'Baixar'}
@@ -158,7 +191,35 @@ export default function FileList() {
             key={file.id}
             className="bg-white rounded-lg shadow-sm border border-gray-200 p-4"
           >
-            <p className="text-sm font-medium text-gray-800 truncate mb-1">{file.filename}</p>
+            {/* Nome + versão */}
+            <div className="flex items-center gap-2 mb-1">
+              <p className="text-sm font-medium text-gray-800 truncate flex-1">
+                {getDisplayName(file)}
+              </p>
+              {file.version && (
+                <span className="shrink-0 text-xs bg-blue-50 text-blue-600 px-1.5 py-0.5 rounded font-mono">
+                  v{file.version}
+                </span>
+              )}
+            </div>
+
+            {/* Descrição expansível */}
+            {file.description && (
+              <div className="mb-2">
+                <button
+                  onClick={() => toggleDesc(file.id)}
+                  className="text-xs text-blue-500 hover:text-blue-700 underline-offset-2 hover:underline"
+                >
+                  {expandedDesc[file.id] ? 'Ocultar descrição' : 'Ver descrição'}
+                </button>
+                {expandedDesc[file.id] && (
+                  <p className="mt-1 text-xs text-gray-600 bg-gray-50 rounded p-2 border border-gray-100">
+                    {file.description}
+                  </p>
+                )}
+              </div>
+            )}
+
             <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
               <span>{file.mime_type}</span>
               <span>{formatSize(file.size)}</span>
@@ -166,10 +227,8 @@ export default function FileList() {
             </div>
             <button
               onClick={() => handleDownload(file)}
-              disabled={
-                downloading[file.id] ||
-                (file.downloads_remaining !== null && file.downloads_remaining <= 0)
-              }
+              disabled={isDisabled(file)}
+              title={file.description || getDisplayName(file)}
               className="w-full py-2 text-sm bg-blue-600 text-white rounded hover:bg-blue-700 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
             >
               {downloading[file.id] ? 'Baixando...' : 'Baixar'}

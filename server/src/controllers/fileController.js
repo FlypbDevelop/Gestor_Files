@@ -27,7 +27,14 @@ async function uploadFile(req, res) {
       });
     }
 
-    const fileRecord = await uploadService.processUpload(req.file, req.user.userId);
+    const { customName, description, version } = req.body;
+    const metadata = {
+      customName: customName || null,
+      description: description || null,
+      version: version || null
+    };
+
+    const fileRecord = await uploadService.processUpload(req.file, req.user.userId, metadata);
 
     logger.info('file_uploaded', { fileId: fileRecord.id, filename: fileRecord.filename, uploadedBy: req.user.userId });
 
@@ -71,7 +78,7 @@ async function updatePermissions(req, res) {
       });
     }
 
-    const { allowedPlanIds, maxDownloadsPerUser } = req.body;
+    const { allowedPlanIds, maxDownloadsPerUser, customName, description, version } = req.body;
 
     if (!Array.isArray(allowedPlanIds)) {
       return res.status(400).json({
@@ -85,7 +92,8 @@ async function updatePermissions(req, res) {
     const updatedFile = await fileManager.updateFilePermissions(
       fileId,
       allowedPlanIds,
-      maxDownloadsPerUser !== undefined ? maxDownloadsPerUser : null
+      maxDownloadsPerUser !== undefined ? maxDownloadsPerUser : null,
+      { customName, description, version }
     );
 
     if (!updatedFile) {

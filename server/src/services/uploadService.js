@@ -100,18 +100,21 @@ function validateFile(file) {
  * Process uploaded file and create database record
  * @param {Express.Multer.File} file - Uploaded file from multer
  * @param {number} uploadedBy - ID of the admin user
+ * @param {Object} metadata - Metadados opcionais: { customName, description, version }
  * @returns {Promise<Object>} Created file record
  * @throws {Error} If upload fails
  */
-async function processUpload(file, uploadedBy) {
+async function processUpload(file, uploadedBy, metadata = {}) {
   try {
     // Validate file
     validateFile(file);
 
+    const { customName = null, description = null, version = null } = metadata;
+
     // Create database record
     const result = await db.run(
-      `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user)
-       VALUES (?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user, custom_name, description, version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         file.originalname,
         file.filename, // Store the unique filename, not full path
@@ -119,7 +122,10 @@ async function processUpload(file, uploadedBy) {
         file.size,
         uploadedBy,
         '[]', // Default: no plans allowed yet
-        null  // Default: unlimited downloads
+        null, // Default: unlimited downloads
+        customName || null,
+        description || null,
+        version || null
       ]
     );
 
@@ -133,6 +139,9 @@ async function processUpload(file, uploadedBy) {
       uploaded_by: uploadedBy,
       allowed_plan_ids: [],
       max_downloads_per_user: null,
+      custom_name: customName || null,
+      description: description || null,
+      version: version || null,
       created_at: new Date().toISOString()
     };
   } catch (error) {

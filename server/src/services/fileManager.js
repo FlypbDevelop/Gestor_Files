@@ -117,13 +117,14 @@ async function deleteFile(fileId) {
 }
 
 /**
- * Update file permissions
+ * Update file permissions and metadata
  * @param {number} fileId
  * @param {number[]} allowedPlanIds - Array of valid integer plan IDs
  * @param {number|null} maxDownloadsPerUser - Positive integer or NULL
+ * @param {Object} metadata - { customName, description, version }
  * @returns {Promise<Object>} Updated file record
  */
-async function updateFilePermissions(fileId, allowedPlanIds, maxDownloadsPerUser) {
+async function updateFilePermissions(fileId, allowedPlanIds, maxDownloadsPerUser, metadata = {}) {
   // Validate allowedPlanIds
   if (!Array.isArray(allowedPlanIds)) {
     const error = new Error('allowedPlanIds must be an array');
@@ -152,11 +153,21 @@ async function updateFilePermissions(fileId, allowedPlanIds, maxDownloadsPerUser
   }
 
   const normalizedMax = maxDownloadsPerUser === undefined ? null : maxDownloadsPerUser;
+  const { customName, description, version } = metadata;
 
   await db.run(
-    `UPDATE files SET allowed_plan_ids = ?, max_downloads_per_user = ?, updated_at = CURRENT_TIMESTAMP
+    `UPDATE files SET allowed_plan_ids = ?, max_downloads_per_user = ?,
+      custom_name = ?, description = ?, version = ?,
+      updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
-    [JSON.stringify(allowedPlanIds), normalizedMax, fileId]
+    [
+      JSON.stringify(allowedPlanIds),
+      normalizedMax,
+      customName !== undefined ? (customName || null) : null,
+      description !== undefined ? (description || null) : null,
+      version !== undefined ? (version || null) : null,
+      fileId
+    ]
   );
 
   return getFileById(fileId);

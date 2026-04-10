@@ -12,13 +12,16 @@ interface EditModalState {
   filename: string;
   selectedPlanIds: number[];
   maxDownloads: string;
+  customName: string;
+  description: string;
+  version: string;
   saving: boolean;
   error: string;
   validationError: string;
 }
 
 /**
- * FileManagement - Admin component for listing, editing permissions, and deleting files.
+ * FileManagement - Componente admin para listar, editar e excluir arquivos.
  * Requirements: 5.1, 5.2
  */
 export default function FileManagement({ plans, refreshKey }: FileManagementProps) {
@@ -60,6 +63,9 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
       .join(', ');
   };
 
+  const getDisplayName = (file: File): string =>
+    file.custom_name || file.filename;
+
   // ---- Delete ----
 
   const handleDelete = async (fileId: number, filename: string) => {
@@ -87,12 +93,15 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
 
   // ---- Edit modal ----
 
-  const openEditModal = (file: FileWithDownloadsRemaining) => {
+  const openEditModal = (file: File) => {
     setEditModal({
       fileId: file.id,
       filename: file.filename,
       selectedPlanIds: [...file.allowed_plan_ids],
       maxDownloads: file.max_downloads_per_user !== null ? String(file.max_downloads_per_user) : '',
+      customName: file.custom_name || '',
+      description: file.description || '',
+      version: file.version || '',
       saving: false,
       error: '',
       validationError: '',
@@ -110,10 +119,6 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
         : [...prev.selectedPlanIds, planId];
       return { ...prev, selectedPlanIds: ids, validationError: '' };
     });
-  };
-
-  const handleModalMaxDownloadsChange = (e: React.ChangeEvent<HTMLInputElement>) => {
-    setEditModal((prev) => prev ? { ...prev, maxDownloads: e.target.value, validationError: '' } : prev);
   };
 
   const validateModal = (): boolean => {
@@ -138,18 +143,15 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
     const permissions: FilePermissions = {
       allowedPlanIds: editModal.selectedPlanIds,
       maxDownloadsPerUser: editModal.maxDownloads.trim() === '' ? null : parseInt(editModal.maxDownloads, 10),
+      customName: editModal.customName.trim() || null,
+      description: editModal.description.trim() || null,
+      version: editModal.version.trim() || null,
     };
 
     setEditModal((prev) => prev ? { ...prev, saving: true, error: '' } : prev);
     try {
       const updated = await apiClient.updateFilePermissions(editModal.fileId, permissions);
-      setFiles((prev) =>
-        prev.map((f) =>
-          f.id === updated.id
-            ? { ...f, ...updated }
-            : f
-        )
-      );
+      setFiles((prev) => prev.map((f) => f.id === updated.id ? { ...f, ...updated } : f));
       closeEditModal();
     } catch (err) {
       let message = 'Erro ao salvar permissões.';
@@ -195,7 +197,8 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
               <table className="min-w-full">
                 <thead>
                   <tr className="bg-gray-50 text-left text-xs font-semibold text-gray-600 uppercase tracking-wider">
-                    <th className="px-4 py-3">Arquivo</th>
+                    <th className="px-4 py-3">Nome</th>
+                    <th className="px-4 py-3">Versão</th>
                     <th className="px-4 py-3">Tipo</th>
                     <th className="px-4 py-3">Tamanho</th>
                     <th className="px-4 py-3">Planos</th>
@@ -206,8 +209,17 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                 <tbody className="divide-y divide-gray-100">
                   {files.map((file) => (
                     <tr key={file.id} className="hover:bg-gray-50 transition-colors">
-                      <td className="px-4 py-3 text-sm font-medium text-gray-800 max-w-xs truncate">
-                        {file.filename}
+                      <td className="px-4 py-3 text-sm font-medium text-gray-800 max-w-xs">
+                        <div className="truncate">{getDisplayName(file)}</div>
+                        {file.custom_name && (
+                          <div className="text-xs text-gray-400 truncate">{file.filename}</div>
+                        )}
+                        {file.description && (
+                          <div className="text-xs text-gray-500 mt-0.5 line-clamp-2">{file.description}</div>
+                        )}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {file.version || '—'}
                       </td>
                       <td className="px-4 py-3 text-sm text-gray-500">{file.mime_type}</td>
                       <td className="px-4 py-3 text-sm text-gray-500">{formatSize(file.size)}</td>
@@ -224,7 +236,7 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                             Editar
                           </button>
                           <button
-                            onClick={() => handleDelete(file.id, file.filename)}
+                            onClick={() => handleDelete(file.id, getDisplayName(file))}
                             disabled={deletingIds.has(file.id)}
                             className="px-3 py-1.5 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                           >
@@ -245,8 +257,12 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
             <div className="sm:hidden divide-y divide-gray-100">
               {files.map((file) => (
                 <div key={file.id} className="p-4">
-                  <p className="text-sm font-medium text-gray-800 truncate mb-1">{file.filename}</p>
+                  <p className="text-sm font-medium text-gray-800 truncate mb-0.5">{getDisplayName(file)}</p>
+                  {file.description && (
+                    <p className="text-xs text-gray-500 mb-1 line-clamp-2">{file.description}</p>
+                  )}
                   <div className="flex flex-wrap gap-x-4 gap-y-1 text-xs text-gray-500 mb-3">
+                    {file.version && <span>v{file.version}</span>}
                     <span>{file.mime_type}</span>
                     <span>{formatSize(file.size)}</span>
                     <span>Planos: {getPlanNames(file.allowed_plan_ids)}</span>
@@ -263,7 +279,7 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                       Editar
                     </button>
                     <button
-                      onClick={() => handleDelete(file.id, file.filename)}
+                      onClick={() => handleDelete(file.id, getDisplayName(file))}
                       disabled={deletingIds.has(file.id)}
                       className="flex-1 py-2 text-sm bg-red-50 text-red-600 rounded hover:bg-red-100 disabled:opacity-50 disabled:cursor-not-allowed transition-colors"
                     >
@@ -280,18 +296,64 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
         )}
       </div>
 
-      {/* Edit permissions modal */}
+      {/* Edit modal */}
       {editModal && (
         <div className="fixed inset-0 z-50 flex items-center justify-center p-4 bg-black/50">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-md">
+          <div className="bg-white rounded-lg shadow-xl w-full max-w-md max-h-[90vh] overflow-y-auto">
             <div className="px-6 py-4 border-b border-gray-200">
-              <h3 className="text-base font-semibold text-gray-800">
-                Editar permissões
-              </h3>
+              <h3 className="text-base font-semibold text-gray-800">Editar arquivo</h3>
               <p className="text-xs text-gray-500 mt-0.5 truncate">{editModal.filename}</p>
             </div>
 
             <div className="px-6 py-5 space-y-5">
+              {/* Nome personalizado */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Nome de exibição{' '}
+                  <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={editModal.customName}
+                  onChange={(e) => setEditModal((prev) => prev ? { ...prev, customName: e.target.value } : prev)}
+                  disabled={editModal.saving}
+                  placeholder="Ex: Manual do Usuário v2"
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              {/* Versão */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Versão{' '}
+                  <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <input
+                  type="text"
+                  value={editModal.version}
+                  onChange={(e) => setEditModal((prev) => prev ? { ...prev, version: e.target.value } : prev)}
+                  disabled={editModal.saving}
+                  placeholder="Ex: 1.0, 2.3.1"
+                  className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              {/* Descrição */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Descrição{' '}
+                  <span className="text-gray-400 font-normal">(opcional)</span>
+                </label>
+                <textarea
+                  value={editModal.description}
+                  onChange={(e) => setEditModal((prev) => prev ? { ...prev, description: e.target.value } : prev)}
+                  disabled={editModal.saving}
+                  rows={3}
+                  placeholder="Descreva o conteúdo do arquivo..."
+                  className="w-full px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50 resize-none"
+                />
+              </div>
+
               {/* Plan checkboxes */}
               <div>
                 <label className="block text-sm font-medium text-gray-700 mb-2">
@@ -328,19 +390,16 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                   min="1"
                   step="1"
                   value={editModal.maxDownloads}
-                  onChange={handleModalMaxDownloadsChange}
+                  onChange={(e) => setEditModal((prev) => prev ? { ...prev, maxDownloads: e.target.value, validationError: '' } : prev)}
                   disabled={editModal.saving}
                   placeholder="Ilimitado"
                   className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
               </div>
 
-              {/* Validation error */}
               {editModal.validationError && (
                 <p className="text-sm text-red-600">{editModal.validationError}</p>
               )}
-
-              {/* API error */}
               {editModal.error && (
                 <p className="text-sm text-red-600">{editModal.error}</p>
               )}

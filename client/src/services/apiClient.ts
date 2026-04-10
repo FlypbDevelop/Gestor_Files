@@ -80,25 +80,31 @@ class ApiClient {
     return res.data.files;
   }
 
-  async uploadFile(file: globalThis.File, permissions: FilePermissions): Promise<File> {
+  async uploadFile(
+    file: globalThis.File,
+    permissions: FilePermissions & { customName?: string; description?: string; version?: string }
+  ): Promise<File> {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('allowedPlanIds', JSON.stringify(permissions.allowedPlanIds));
     if (permissions.maxDownloadsPerUser !== null) {
       formData.append('maxDownloadsPerUser', String(permissions.maxDownloadsPerUser));
     }
-    const res: AxiosResponse<File> = await this.instance.post('/files/upload', formData, {
+    if (permissions.customName) formData.append('customName', permissions.customName);
+    if (permissions.description) formData.append('description', permissions.description);
+    if (permissions.version) formData.append('version', permissions.version);
+    const res: AxiosResponse<{ file: File }> = await this.instance.post('/files/upload', formData, {
       headers: { 'Content-Type': 'multipart/form-data' },
     });
-    return res.data;
+    return res.data.file;
   }
 
   async updateFilePermissions(fileId: number, permissions: FilePermissions): Promise<File> {
-    const res: AxiosResponse<File> = await this.instance.put(
+    const res: AxiosResponse<{ file: File }> = await this.instance.put(
       `/files/${fileId}/permissions`,
       permissions
     );
-    return res.data;
+    return res.data.file;
   }
 
   async deleteFile(fileId: number): Promise<void> {
