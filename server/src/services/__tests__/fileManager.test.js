@@ -142,7 +142,7 @@ describe('FileManager', () => {
 
       expect(db.run).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE files'),
-        [JSON.stringify([1, 2]), 5, 1]
+        [JSON.stringify([1, 2]), 5, null, null, null, 1]
       );
 
       expect(result).toMatchObject({
@@ -160,7 +160,7 @@ describe('FileManager', () => {
 
       expect(db.run).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE files'),
-        [JSON.stringify([1]), null, 1]
+        [JSON.stringify([1]), null, null, null, null, 1]
       );
       expect(result.max_downloads_per_user).toBeNull();
     });

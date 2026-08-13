@@ -109,6 +109,9 @@ describe('UploadService', () => {
           1024 * 1024,
           1,
           '[]',
+          null,
+          null,
+          null,
           null
         ]
       );
