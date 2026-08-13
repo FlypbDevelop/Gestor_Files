@@ -10,6 +10,7 @@ import {
   AdminStats,
   UserDashboard,
   ApiRequestError,
+  MostDownloadedFile,
 } from '../types';
 
 class ApiClient {

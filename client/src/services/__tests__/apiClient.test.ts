@@ -149,7 +149,7 @@ describe('register', () => {
 describe('getCurrentUser', () => {
   it('gets /auth/me and returns user', async () => {
     const mockUser = { id: 1, email: 'a@b.com', role: 'USER' };
-    mockAxiosInstance.get.mockResolvedValueOnce({ data: mockUser });
+    mockAxiosInstance.get.mockResolvedValueOnce({ data: { user: mockUser } });
 
     const result = await apiClient.getCurrentUser();
 
@@ -161,13 +161,13 @@ describe('getCurrentUser', () => {
 // ─── File methods (Requirement 4.1, 6.1) ─────────────────────────────────────
 
 describe('listFiles', () => {
-  it('gets /files and returns file list (Req 6.1)', async () => {
+  it('gets /files/my and returns file list (Req 6.1)', async () => {
     const mockFiles = [{ id: 1, filename: 'doc.pdf', downloads_remaining: 5 }];
     mockAxiosInstance.get.mockResolvedValueOnce({ data: mockFiles });
 
     const result = await apiClient.listFiles();
 
-    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/files');
+    expect(mockAxiosInstance.get).toHaveBeenCalledWith('/files/my');
     expect(result).toEqual(mockFiles);
   });
 });
@@ -176,7 +176,7 @@ describe('uploadFile', () => {
   it('posts multipart form data to /files/upload (Req 4.1)', async () => {
     const mockFile = new File(['content'], 'test.pdf', { type: 'application/pdf' });
     const permissions = { allowedPlanIds: [1, 2], maxDownloadsPerUser: 3 };
-    const mockResponse = { data: { id: 10, filename: 'test.pdf' } };
+    const mockResponse = { data: { file: { id: 10, filename: 'test.pdf' } } };
     mockAxiosInstance.post.mockResolvedValueOnce(mockResponse);
 
     const result = await apiClient.uploadFile(mockFile, permissions);
@@ -186,7 +186,7 @@ describe('uploadFile', () => {
       expect.any(FormData),
       { headers: { 'Content-Type': 'multipart/form-data' } }
     );
-    expect(result).toEqual(mockResponse.data);
+    expect(result).toEqual(mockResponse.data.file);
   });
 
   it('omits maxDownloadsPerUser from form when null', async () => {

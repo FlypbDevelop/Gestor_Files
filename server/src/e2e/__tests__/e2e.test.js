@@ -79,6 +79,9 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
         uploaded_by INTEGER NOT NULL,
         allowed_plan_ids TEXT NOT NULL,
         max_downloads_per_user INTEGER,
+        custom_name TEXT,
+        description TEXT,
+        version TEXT,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (uploaded_by) REFERENCES users(id)

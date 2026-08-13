@@ -9,23 +9,23 @@
  * no construtor Request. Os testes validam a lógica do service worker de forma
  * isolada, simulando o comportamento das Cache API e fetch.
  */
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, vi, beforeEach, afterEach, type Mock } from 'vitest'
 
 // ─── Tipos auxiliares ────────────────────────────────────────────────────────
 
 interface MockCache {
-  put: ReturnType<typeof vi.fn>
-  match: ReturnType<typeof vi.fn>
-  addAll: ReturnType<typeof vi.fn>
-  delete: ReturnType<typeof vi.fn>
-  keys: ReturnType<typeof vi.fn>
+  put: Mock<(url: string, response: Response) => Promise<void>>
+  match: Mock<(url: string) => Promise<Response | undefined>>
+  addAll: Mock<(urls: string[]) => Promise<void>>
+  delete: Mock<(name: string) => Promise<boolean>>
+  keys: Mock<() => Promise<string[]>>
 }
 
 interface MockCacheStorage {
-  open: ReturnType<typeof vi.fn>
-  match: ReturnType<typeof vi.fn>
-  keys: ReturnType<typeof vi.fn>
-  delete: ReturnType<typeof vi.fn>
+  open: Mock<(name: string) => Promise<MockCache>>
+  match: Mock<(url: string) => Promise<Response | undefined>>
+  keys: Mock<() => Promise<string[]>>
+  delete: Mock<(name: string) => Promise<boolean>>
   _store: Map<string, MockCache>
 }
 
@@ -42,22 +42,22 @@ function makeCacheStorage(): MockCacheStorage {
   const store = new Map<string, MockCache>()
 
   const makeCache = (): MockCache => ({
-    put: vi.fn().mockResolvedValue(undefined),
-    match: vi.fn().mockResolvedValue(undefined),
-    addAll: vi.fn().mockResolvedValue(undefined),
-    delete: vi.fn().mockResolvedValue(true),
-    keys: vi.fn().mockResolvedValue([]),
+    put: vi.fn<(url: string, response: Response) => Promise<void>>().mockResolvedValue(undefined),
+    match: vi.fn<(url: string) => Promise<Response | undefined>>().mockResolvedValue(undefined),
+    addAll: vi.fn<(urls: string[]) => Promise<void>>().mockResolvedValue(undefined),
+    delete: vi.fn<(name: string) => Promise<boolean>>().mockResolvedValue(true),
+    keys: vi.fn<() => Promise<string[]>>().mockResolvedValue([]),
   })
 
   return {
     _store: store,
-    open: vi.fn().mockImplementation(async (name: string) => {
+    open: vi.fn<(name: string) => Promise<MockCache>>().mockImplementation(async (name: string) => {
       if (!store.has(name)) store.set(name, makeCache())
       return store.get(name)!
     }),
-    match: vi.fn().mockResolvedValue(undefined),
-    keys: vi.fn().mockImplementation(async () => Array.from(store.keys())),
-    delete: vi.fn().mockImplementation(async (name: string) => store.delete(name)),
+    match: vi.fn<(url: string) => Promise<Response | undefined>>().mockResolvedValue(undefined),
+    keys: vi.fn<() => Promise<string[]>>().mockImplementation(async () => Array.from(store.keys())),
+    delete: vi.fn<(name: string) => Promise<boolean>>().mockImplementation(async (name: string) => store.delete(name)),
   }
 }
 

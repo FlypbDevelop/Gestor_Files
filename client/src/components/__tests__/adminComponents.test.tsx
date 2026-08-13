@@ -4,7 +4,6 @@
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
-import React from 'react';
 import FileUpload from '../admin/FileUpload';
 import FileManagement from '../admin/FileManagement';
 import AdminDashboard from '../admin/AdminDashboard';
@@ -22,6 +21,7 @@ vi.mock('../../services/apiClient', () => ({
   default: {
     uploadFile: vi.fn(),
     listFiles: vi.fn(),
+    listAllFiles: vi.fn(),
     updateFilePermissions: vi.fn(),
     deleteFile: vi.fn(),
     getAdminStats: vi.fn(),
@@ -34,7 +34,7 @@ vi.mock('../../services/apiClient', () => ({
 import apiClient from '../../services/apiClient';
 
 const mockUploadFile = vi.mocked(apiClient.uploadFile);
-const mockListFiles = vi.mocked(apiClient.listFiles);
+const mockListAllFiles = vi.mocked(apiClient.listAllFiles);
 const mockUpdateFilePermissions = vi.mocked(apiClient.updateFilePermissions);
 const mockDeleteFile = vi.mocked(apiClient.deleteFile);
 const mockGetAdminStats = vi.mocked(apiClient.getAdminStats);
@@ -73,6 +73,9 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [1, 2],
     max_downloads_per_user: 5,
+    custom_name: null,
+    description: null,
+    version: null,
     downloads_remaining: 3,
     created_at: '2024-01-02T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',
@@ -86,6 +89,9 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [2],
     max_downloads_per_user: null,
+    custom_name: null,
+    description: null,
+    version: null,
     downloads_remaining: null,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
@@ -163,7 +169,7 @@ describe('FileUpload component', () => {
   });
 
   it('shows validation error when max downloads is not a positive integer', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /editar/i })[0]);
@@ -262,25 +268,25 @@ describe('FileUpload component', () => {
 
 describe('FileManagement component', () => {
   it('shows loading state initially', () => {
-    mockListFiles.mockReturnValue(new Promise(() => {}));
+    mockListAllFiles.mockReturnValue(new Promise(() => {}));
     render(<FileManagement plans={samplePlans} />);
     expect(screen.getByText(/carregando arquivos/i)).toBeInTheDocument();
   });
 
   it('shows error when listFiles fails', async () => {
-    mockListFiles.mockRejectedValue(new Error('Falha na rede'));
+    mockListAllFiles.mockRejectedValue(new Error('Falha na rede'));
     render(<FileManagement plans={samplePlans} />);
     expect(await screen.findByText('Falha na rede')).toBeInTheDocument();
   });
 
   it('shows empty state when no files exist', async () => {
-    mockListFiles.mockResolvedValue([]);
+    mockListAllFiles.mockResolvedValue([]);
     render(<FileManagement plans={samplePlans} />);
     expect(await screen.findByText(/nenhum arquivo cadastrado/i)).toBeInTheDocument();
   });
 
   it('renders file list with filenames and edit/delete buttons', async () => {
-    mockListFiles.mockResolvedValue(sampleFiles);
+    mockListAllFiles.mockResolvedValue(sampleFiles);
     render(<FileManagement plans={samplePlans} />);
     expect(await screen.findAllByText('relatorio.pdf')).not.toHaveLength(0);
     expect(screen.getAllByText('imagem.png')).not.toHaveLength(0);
@@ -289,15 +295,15 @@ describe('FileManagement component', () => {
   });
 
   it('opens edit modal when Editar button is clicked', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /editar/i })[0]);
-    expect(screen.getByText('Editar permissões')).toBeInTheDocument();
+    expect(screen.getByText('Editar arquivo')).toBeInTheDocument();
   });
 
   it('modal shows plan checkboxes pre-selected based on file permissions (Req 5.1)', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /editar/i })[0]);
@@ -308,7 +314,7 @@ describe('FileManagement component', () => {
   });
 
   it('modal shows max downloads pre-filled (Req 5.2)', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /editar/i })[0]);
@@ -317,17 +323,17 @@ describe('FileManagement component', () => {
   });
 
   it('closes modal when Cancelar is clicked', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /editar/i })[0]);
-    expect(screen.getByText('Editar permissões')).toBeInTheDocument();
+    expect(screen.getByText('Editar arquivo')).toBeInTheDocument();
     fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
-    expect(screen.queryByText('Editar permissões')).not.toBeInTheDocument();
+    expect(screen.queryByText('Editar arquivo')).not.toBeInTheDocument();
   });
 
   it('shows validation error when saving with no plans selected (Req 5.1)', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /editar/i })[0]);
@@ -339,7 +345,7 @@ describe('FileManagement component', () => {
 
   it('calls updateFilePermissions with correct args on save (Req 5.1, 5.2)', async () => {
     const updatedFile = { ...sampleFiles[0], allowed_plan_ids: [2], max_downloads_per_user: 10 };
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     mockUpdateFilePermissions.mockResolvedValue(updatedFile);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
@@ -348,12 +354,12 @@ describe('FileManagement component', () => {
     const maxInput = screen.getByPlaceholderText(/ilimitado/i);
     fireEvent.change(maxInput, { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [2], maxDownloadsPerUser: 10 }));
-    await waitFor(() => expect(screen.queryByText('Editar permissões')).not.toBeInTheDocument());
+    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [2], maxDownloadsPerUser: 10, customName: null, description: null, version: null }));
+    await waitFor(() => expect(screen.queryByText('Editar arquivo')).not.toBeInTheDocument());
   });
 
   it('shows error in modal when updateFilePermissions fails', async () => {
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     mockUpdateFilePermissions.mockRejectedValue(new ApiRequestError('Permissão negada.', 403));
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
@@ -364,7 +370,7 @@ describe('FileManagement component', () => {
 
   it('saves with null maxDownloadsPerUser when field is blank (Req 5.2)', async () => {
     const updatedFile = { ...sampleFiles[0], max_downloads_per_user: null };
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     mockUpdateFilePermissions.mockResolvedValue(updatedFile);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
@@ -372,11 +378,11 @@ describe('FileManagement component', () => {
     const maxInput = screen.getByPlaceholderText(/ilimitado/i);
     fireEvent.change(maxInput, { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [1, 2], maxDownloadsPerUser: null }));
+    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [1, 2], maxDownloadsPerUser: null, customName: null, description: null, version: null }));
   });
 
   it('calls deleteFile and removes file from list after confirmation', async () => {
-    mockListFiles.mockResolvedValue([...sampleFiles]);
+    mockListAllFiles.mockResolvedValue([...sampleFiles]);
     mockDeleteFile.mockResolvedValue(undefined);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
@@ -388,7 +394,7 @@ describe('FileManagement component', () => {
 
   it('does not call deleteFile when user cancels confirmation', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(false);
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
     fireEvent.click(screen.getAllByRole('button', { name: /excluir/i })[0]);
@@ -398,7 +404,7 @@ describe('FileManagement component', () => {
 
   it('shows error message when deleteFile fails', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     mockDeleteFile.mockRejectedValue(new ApiRequestError('Erro ao excluir arquivo.', 500));
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');
@@ -409,7 +415,7 @@ describe('FileManagement component', () => {
   it('disables delete button while deletion is in progress', async () => {
     vi.spyOn(window, 'confirm').mockReturnValue(true);
     let resolve: () => void;
-    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockListAllFiles.mockResolvedValue([sampleFiles[0]]);
     mockDeleteFile.mockReturnValue(new Promise<void>((res) => { resolve = res; }));
     render(<FileManagement plans={samplePlans} />);
     await screen.findAllByText('relatorio.pdf');

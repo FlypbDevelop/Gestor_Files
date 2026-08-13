@@ -31,6 +31,9 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [1, 2],
     max_downloads_per_user: 5,
+    custom_name: null,
+    description: null,
+    version: null,
     downloads_remaining: 3,
     created_at: '2024-01-02T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',
@@ -44,6 +47,9 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [2],
     max_downloads_per_user: null,
+    custom_name: null,
+    description: null,
+    version: null,
     downloads_remaining: null,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
@@ -218,6 +224,9 @@ const fileArbitrary = fc.record<FileWithDownloadsRemaining>({
   uploaded_by: fc.integer({ min: 1, max: 10 }),
   allowed_plan_ids: fc.array(fc.integer({ min: 1, max: 3 }), { minLength: 1, maxLength: 2 }),
   max_downloads_per_user: fc.option(fc.integer({ min: 1, max: 100 }), { nil: null }),
+  custom_name: fc.option(fc.string({ maxLength: 30 }), { nil: null }),
+  description: fc.option(fc.string({ maxLength: 80 }), { nil: null }),
+  version: fc.option(fc.string({ maxLength: 15 }), { nil: null }),
   downloads_remaining: fc.option(fc.integer({ min: 0, max: 100 }), { nil: null }),
   created_at: fc.date({ min: new Date('2023-01-01'), max: new Date('2024-12-31') }).map((d) => d.toISOString()),
   updated_at: fc.constant('2024-01-01T00:00:00Z'),
@@ -243,7 +252,7 @@ describe('Property-Based Tests: FileList', () => {
           mockListFiles.mockResolvedValue(files);
           const { unmount } = render(<FileList />);
 
-          await screen.findAllByText(files[0].filename);
+          await screen.findAllByRole('button', { name: /baixar/i });
 
           for (const file of files) {
             const expectedText =
@@ -275,7 +284,7 @@ describe('Property-Based Tests: FileList', () => {
           mockListFiles.mockResolvedValue(sorted);
           const { unmount } = render(<FileList />);
 
-          await screen.findAllByText(sorted[0].filename);
+          await screen.findAllByRole('button', { name: /baixar/i });
 
           for (let i = 0; i < sorted.length - 1; i++) {
             const dateA = new Date(sorted[i].created_at).getTime();
@@ -300,7 +309,7 @@ describe('Property-Based Tests: FileList', () => {
       fc.asyncProperty(
         fc.array(fileArbitrary, { minLength: 1, maxLength: 3 }),
         async (files) => {
-          const uniqueFiles = files.map((f, i) => ({ ...f, id: i + 1, filename: `file-${i + 1}-${f.filename}` }));
+          const uniqueFiles = files.map((f, i) => ({ ...f, id: i + 1, filename: `file-${i + 1}-${f.filename}`, custom_name: null }));
 
           mockListFiles.mockResolvedValue(uniqueFiles);
           const { unmount } = render(<FileList />);

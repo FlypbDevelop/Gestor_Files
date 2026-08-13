@@ -20,10 +20,21 @@ export default defineConfig(({ mode }) => {
       rollupOptions: {
         output: {
           // Separa vendor (react, react-dom, react-router) em chunk próprio
-          manualChunks: {
-            vendor: ['react', 'react-dom', 'react-router-dom'],
-            axios: ['axios'],
-          }
+          manualChunks(id) {
+            if (id.includes('node_modules')) {
+              if (
+                id.includes('react') ||
+                id.includes('react-dom') ||
+                id.includes('react-router')
+              ) {
+                return 'vendor';
+              }
+              if (id.includes('axios')) {
+                return 'axios';
+              }
+            }
+            return undefined;
+          },
         }
       }
     },
