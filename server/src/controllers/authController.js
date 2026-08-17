@@ -135,7 +135,7 @@ async function getCurrentUser(req, res) {
 
     // Fetch full user data from database
     const user = await db.get(
-      'SELECT id, name, email, role, plan_id, created_at FROM users WHERE id = ?',
+      'SELECT id, name, email, role, plan_id, credits, created_at FROM users WHERE id = ?',
       [userId]
     );
 

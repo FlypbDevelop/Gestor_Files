@@ -133,11 +133,39 @@ function all(sql, params = []) {
   });
 }
 
+/**
+ * Execute a callback inside a SQLite transaction (BEGIN/COMMIT/ROLLBACK)
+ * If the callback throws, the transaction is rolled back and the error rethrown.
+ * @param {Function} callback - Async function receiving no args; return value is passed through
+ * @returns {Promise<any>} Result of the callback
+ */
+async function withTransaction(callback) {
+  const database = getDatabase();
+
+  await new Promise((resolve, reject) => {
+    database.exec('BEGIN', (err) => (err ? reject(err) : resolve()));
+  });
+
+  try {
+    const result = await callback();
+    await new Promise((resolve, reject) => {
+      database.exec('COMMIT', (err) => (err ? reject(err) : resolve()));
+    });
+    return result;
+  } catch (error) {
+    await new Promise((resolve, reject) => {
+      database.exec('ROLLBACK', (err) => (err ? reject(err) : resolve()));
+    });
+    throw error;
+  }
+}
+
 module.exports = {
   getDatabase,
   initializeDatabase,
   closeDatabase,
   run,
   get,
-  all
+  all,
+  withTransaction
 };

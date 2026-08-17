@@ -92,10 +92,10 @@ async function register(name, email, password) {
   // Hash password
   const passwordHash = await hashPassword(password);
 
-  // Create user with role USER and plan Free (plan_id = 1)
+  // Create user with role USER and plan Free (plan_id = 1), starting with 0 credits
   const result = await db.run(
-    'INSERT INTO users (name, email, password_hash, role, plan_id) VALUES (?, ?, ?, ?, ?)',
-    [name, email, passwordHash, 'USER', 1]
+    'INSERT INTO users (name, email, password_hash, role, plan_id, credits) VALUES (?, ?, ?, ?, ?, ?)',
+    [name, email, passwordHash, 'USER', 1, 0]
   );
 
   // Return user data without password
@@ -104,7 +104,8 @@ async function register(name, email, password) {
     name,
     email,
     role: 'USER',
-    plan_id: 1
+    plan_id: 1,
+    credits: 0
   };
 }
 
@@ -118,7 +119,7 @@ async function register(name, email, password) {
 async function login(email, password) {
   // Find user by email
   const user = await db.get(
-    'SELECT id, name, email, password_hash, role, plan_id FROM users WHERE email = ?',
+    'SELECT id, name, email, password_hash, role, plan_id, credits FROM users WHERE email = ?',
     [email]
   );
 
@@ -158,7 +159,8 @@ async function login(email, password) {
       name: user.name,
       email: user.email,
       role: user.role,
-      plan_id: user.plan_id
+      plan_id: user.plan_id,
+      credits: user.credits
     }
   };
 }

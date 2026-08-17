@@ -32,6 +32,24 @@ const sampleDashboard: UserDashboardData = {
     updated_at: '2024-01-01T00:00:00Z',
   },
   totalDownloads: 7,
+  credits: 15,
+  creditTransactions: [
+    {
+      id: 1,
+      amount: 15,
+      reason: 'GRANT',
+      file_id: null,
+      created_at: '2024-06-01T10:00:00Z',
+    },
+    {
+      id: 2,
+      amount: -3,
+      reason: 'DOWNLOAD',
+      file_id: 3,
+      filename: 'relatorio.pdf',
+      created_at: '2024-06-15T14:30:00Z',
+    },
+  ],
   downloadHistory: [
     {
       id: 1,

@@ -100,7 +100,7 @@ function validateFile(file) {
  * Process uploaded file and create database record
  * @param {Express.Multer.File} file - Uploaded file from multer
  * @param {number} uploadedBy - ID of the admin user
- * @param {Object} metadata - Metadados opcionais: { customName, description, version }
+ * @param {Object} metadata - Metadados opcionais: { customName, description, version, creditCost }
  * @returns {Promise<Object>} Created file record
  * @throws {Error} If upload fails
  */
@@ -109,12 +109,22 @@ async function processUpload(file, uploadedBy, metadata = {}) {
     // Validate file
     validateFile(file);
 
-    const { customName = null, description = null, version = null } = metadata;
+    const { customName = null, description = null, version = null, creditCost = null } = metadata;
+
+    // Validate creditCost: positive integer or null
+    if (creditCost !== null && creditCost !== undefined) {
+      if (!Number.isInteger(creditCost) || creditCost <= 0) {
+        const error = new Error('creditCost must be a positive integer or NULL');
+        error.code = 'INVALID_CREDIT_COST';
+        error.statusCode = 400;
+        throw error;
+      }
+    }
 
     // Create database record
     const result = await db.run(
-      `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user, custom_name, description, version)
-       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
+      `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user, credit_cost, custom_name, description, version)
+       VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)`,
       [
         file.originalname,
         file.filename, // Store the unique filename, not full path
@@ -123,6 +133,7 @@ async function processUpload(file, uploadedBy, metadata = {}) {
         uploadedBy,
         '[]', // Default: no plans allowed yet
         null, // Default: unlimited downloads
+        creditCost || null,
         customName || null,
         description || null,
         version || null
@@ -139,6 +150,7 @@ async function processUpload(file, uploadedBy, metadata = {}) {
       uploaded_by: uploadedBy,
       allowed_plan_ids: [],
       max_downloads_per_user: null,
+      credit_cost: creditCost || null,
       custom_name: customName || null,
       description: description || null,
       version: version || null,

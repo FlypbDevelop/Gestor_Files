@@ -3,16 +3,22 @@
  * Validates: Requirements 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3
  */
 import { render, screen, fireEvent, waitFor } from '@testing-library/react';
+import { MemoryRouter } from 'react-router-dom';
 import { describe, it, expect, vi, beforeEach } from 'vitest';
 import * as fc from 'fast-check';
 import FileList from '../user/FileList';
-import { ApiRequestError, FileWithDownloadsRemaining } from '../../types';
+import {
+  ApiRequestError,
+  FileWithDownloadsRemaining,
+  UserDashboard as UserDashboardData,
+} from '../../types';
 
 // Mock the apiClient module
 vi.mock('../../services/apiClient', () => ({
   default: {
     listFiles: vi.fn(),
     downloadFile: vi.fn(),
+    getUserDashboard: vi.fn(),
   },
 }));
 
@@ -20,6 +26,34 @@ import apiClient from '../../services/apiClient';
 
 const mockListFiles = vi.mocked(apiClient.listFiles);
 const mockDownloadFile = vi.mocked(apiClient.downloadFile);
+const mockGetUserDashboard = vi.mocked(apiClient.getUserDashboard);
+
+const makeDashboard = (credits: number): UserDashboardData => ({
+  plan: {
+    id: 1,
+    name: 'Free',
+    price: 0,
+    features: {
+      maxDownloadsPerMonth: 10,
+      maxFileSize: 50,
+      prioritySupport: false,
+      customFeatures: [],
+    },
+    created_at: '2024-01-01T00:00:00Z',
+    updated_at: '2024-01-01T00:00:00Z',
+  },
+  downloadHistory: [],
+  totalDownloads: 0,
+  credits,
+  creditTransactions: [],
+});
+
+const renderFileList = () =>
+  render(
+    <MemoryRouter>
+      <FileList />
+    </MemoryRouter>
+  );
 
 const sampleFiles: FileWithDownloadsRemaining[] = [
   {
@@ -31,6 +65,7 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [1, 2],
     max_downloads_per_user: 5,
+    credit_cost: null,
     custom_name: null,
     description: null,
     version: null,
@@ -47,6 +82,7 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [2],
     max_downloads_per_user: null,
+    credit_cost: null,
     custom_name: null,
     description: null,
     version: null,
@@ -61,34 +97,35 @@ beforeEach(() => {
   vi.clearAllMocks();
   global.URL.createObjectURL = vi.fn(() => 'blob:mock-url');
   global.URL.revokeObjectURL = vi.fn();
+  mockGetUserDashboard.mockResolvedValue(makeDashboard(100));
 });
 
 describe('FileList component', () => {
   // ---- Loading state ----
   it('shows loading indicator while fetching files', () => {
     mockListFiles.mockReturnValue(new Promise(() => {})); // never resolves
-    render(<FileList />);
+    renderFileList();
     expect(screen.getByText(/carregando arquivos/i)).toBeInTheDocument();
   });
 
   // ---- Empty state ----
   it('shows empty message when no files are returned', async () => {
     mockListFiles.mockResolvedValue([]);
-    render(<FileList />);
+    renderFileList();
     expect(await screen.findByText(/nenhum arquivo disponível/i)).toBeInTheDocument();
   });
 
   // ---- Error state ----
   it('shows error message when listFiles fails', async () => {
     mockListFiles.mockRejectedValue(new Error('Falha na rede'));
-    render(<FileList />);
+    renderFileList();
     expect(await screen.findByText('Falha na rede')).toBeInTheDocument();
   });
 
   // ---- Req 6.4: metadata displayed ----
   it('displays filename, mime_type, size and downloads_remaining for each file', async () => {
     mockListFiles.mockResolvedValue(sampleFiles);
-    render(<FileList />);
+    renderFileList();
 
     // filename
     expect(await screen.findAllByText('document.pdf')).not.toHaveLength(0);
@@ -110,14 +147,14 @@ describe('FileList component', () => {
   // ---- Req 6.2: unlimited shown as "Ilimitado" ----
   it('shows "Ilimitado" when downloads_remaining is null', async () => {
     mockListFiles.mockResolvedValue([sampleFiles[1]]);
-    render(<FileList />);
+    renderFileList();
     expect(await screen.findAllByText('Ilimitado')).not.toHaveLength(0);
   });
 
   // ---- Download button present ----
   it('renders a download button for each file', async () => {
     mockListFiles.mockResolvedValue(sampleFiles);
-    render(<FileList />);
+    renderFileList();
     await screen.findAllByText('document.pdf');
     const buttons = screen.getAllByRole('button', { name: /baixar/i });
     // Each file has 2 buttons (desktop + mobile), so at least 2 per file
@@ -131,7 +168,7 @@ describe('FileList component', () => {
       downloads_remaining: 0,
     };
     mockListFiles.mockResolvedValue([exhaustedFile]);
-    render(<FileList />);
+    renderFileList();
     await screen.findAllByText('document.pdf');
     const buttons = screen.getAllByRole('button', { name: /baixar/i });
     buttons.forEach((btn) => expect(btn).toBeDisabled());
@@ -141,7 +178,7 @@ describe('FileList component', () => {
   it('shows 403 error message when download is forbidden', async () => {
     mockListFiles.mockResolvedValue([sampleFiles[0]]);
     mockDownloadFile.mockRejectedValue(new ApiRequestError('Forbidden', 403));
-    render(<FileList />);
+    renderFileList();
     await screen.findAllByText('document.pdf');
     const buttons = screen.getAllByRole('button', { name: /baixar/i });
     fireEvent.click(buttons[0]);
@@ -149,11 +186,159 @@ describe('FileList component', () => {
     expect(msgs403.length).toBeGreaterThan(0);
   });
 
+  // ---- 402 error message (créditos insuficientes) ----
+  it('shows 402 error message when credits are insufficient', async () => {
+    mockListFiles.mockResolvedValue([sampleFiles[0]]);
+    mockDownloadFile.mockRejectedValue(new ApiRequestError('INSUFFICIENT_CREDITS', 402));
+    renderFileList();
+    await screen.findAllByText('document.pdf');
+    const buttons = screen.getAllByRole('button', { name: /baixar/i });
+    fireEvent.click(buttons[0]);
+    const msgs402 = await screen.findAllByText(/créditos insuficientes/i);
+    expect(msgs402.length).toBeGreaterThan(0);
+  });
+
+  // ---- Avulso: custo em créditos exibido ----
+  it('shows credit cost and labeled button for avulso files', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    renderFileList();
+    await screen.findAllByText('document.pdf');
+    expect(screen.getAllByText('8 créditos').length).toBeGreaterThan(0);
+    expect(screen.getAllByRole('button', { name: /baixar \(8 créditos\)/i }).length).toBeGreaterThan(0);
+  });
+
+  // ---- Aviso de saldo insuficiente ----
+  it('shows insufficient credits banner with a button to the extrato', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    mockGetUserDashboard.mockResolvedValue(makeDashboard(3));
+    renderFileList();
+
+    await screen.findAllByText('document.pdf');
+    expect(screen.getByText(/saldo de créditos insuficiente/i)).toBeInTheDocument();
+    expect(screen.getByText(/seu saldo \(3 créditos\)/i)).toBeInTheDocument();
+    expect(screen.getAllByRole('button', { name: /ver extrato de créditos/i }).length).toBeGreaterThan(0);
+    // O custo do arquivo aparece destacado como saldo insuficiente
+    expect(screen.getAllByText(/8 créditos/i).length).toBeGreaterThan(0);
+  });
+
+  it('does not show the banner when credits cover all avulso costs', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    mockGetUserDashboard.mockResolvedValue(makeDashboard(10));
+    renderFileList();
+
+    await screen.findAllByText('document.pdf');
+    expect(screen.queryByText(/saldo de créditos insuficiente/i)).not.toBeInTheDocument();
+    expect(screen.queryByRole('button', { name: /ver extrato de créditos/i })).not.toBeInTheDocument();
+  });
+
+  // ---- Modal de confirmação de download avulso ----
+  it('opens the confirmation modal for avulso downloads without downloading immediately', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    mockGetUserDashboard.mockResolvedValue(makeDashboard(10));
+    renderFileList();
+
+    await screen.findAllByText('document.pdf');
+    fireEvent.click(screen.getAllByRole('button', { name: /baixar \(8 créditos\)/i })[0]);
+
+    expect(await screen.findByText('Confirmar download avulso')).toBeInTheDocument();
+    // Custo, saldo atual e saldo após no modal
+    expect(screen.getAllByText('8 créditos').length).toBeGreaterThan(0);
+    expect(screen.getByText('10')).toBeInTheDocument();
+    expect(screen.getByText('2')).toBeInTheDocument();
+    expect(mockDownloadFile).not.toHaveBeenCalled();
+  });
+
+  it('cancels the modal without downloading', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    renderFileList();
+
+    await screen.findAllByText('document.pdf');
+    fireEvent.click(screen.getAllByRole('button', { name: /baixar \(8 créditos\)/i })[0]);
+    await screen.findByText('Confirmar download avulso');
+
+    fireEvent.click(screen.getByRole('button', { name: /cancelar/i }));
+    await waitFor(() =>
+      expect(screen.queryByText('Confirmar download avulso')).not.toBeInTheDocument()
+    );
+    expect(mockDownloadFile).not.toHaveBeenCalled();
+  });
+
+  it('starts the download when the user confirms the modal', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    mockDownloadFile.mockResolvedValue(new Blob(['data']));
+    renderFileList();
+
+    await screen.findAllByText('document.pdf');
+    fireEvent.click(screen.getAllByRole('button', { name: /baixar \(8 créditos\)/i })[0]);
+    await screen.findByText('Confirmar download avulso');
+
+    fireEvent.click(screen.getByRole('button', { name: /confirmar download/i }));
+    await waitFor(() => expect(mockDownloadFile).toHaveBeenCalledWith(avulsoFile.id));
+    await waitFor(() =>
+      expect(screen.queryByText('Confirmar download avulso')).not.toBeInTheDocument()
+    );
+  });
+
+  it('disables the confirm button and warns when balance is insufficient', async () => {
+    const avulsoFile: FileWithDownloadsRemaining = {
+      ...sampleFiles[0],
+      credit_cost: 5,
+      effective_credit_cost: 8,
+      downloads_remaining: null,
+    };
+    mockListFiles.mockResolvedValue([avulsoFile]);
+    mockGetUserDashboard.mockResolvedValue(makeDashboard(3));
+    renderFileList();
+
+    await screen.findAllByText('document.pdf');
+    fireEvent.click(screen.getAllByRole('button', { name: /baixar \(8 créditos\)/i })[0]);
+    await screen.findByText('Confirmar download avulso');
+
+    expect(screen.getByText(/saldo insuficiente: este download custa/i)).toBeInTheDocument();
+    expect(screen.getByRole('button', { name: /confirmar download/i })).toBeDisabled();
+  });
+
   // ---- Req 7.3: 429 error message ----
   it('shows 429 error message when download limit is exceeded', async () => {
     mockListFiles.mockResolvedValue([sampleFiles[0]]);
     mockDownloadFile.mockRejectedValue(new ApiRequestError('Too Many Requests', 429));
-    render(<FileList />);
+    renderFileList();
     await screen.findAllByText('document.pdf');
     const buttons = screen.getAllByRole('button', { name: /baixar/i });
     fireEvent.click(buttons[0]);
@@ -178,7 +363,7 @@ describe('FileList component', () => {
       return el;
     });
 
-    render(<FileList />);
+    renderFileList();
     await screen.findAllByText('document.pdf');
     const buttons = screen.getAllByRole('button', { name: /baixar/i });
     fireEvent.click(buttons[0]);
@@ -197,7 +382,7 @@ describe('FileList component', () => {
       .mockResolvedValueOnce(updatedFiles);
     mockDownloadFile.mockResolvedValue(new Blob(['data']));
 
-    render(<FileList />);
+    renderFileList();
     await screen.findAllByText('document.pdf');
     const buttons = screen.getAllByRole('button', { name: /baixar/i });
     fireEvent.click(buttons[0]);
@@ -224,6 +409,8 @@ const fileArbitrary = fc.record<FileWithDownloadsRemaining>({
   uploaded_by: fc.integer({ min: 1, max: 10 }),
   allowed_plan_ids: fc.array(fc.integer({ min: 1, max: 3 }), { minLength: 1, maxLength: 2 }),
   max_downloads_per_user: fc.option(fc.integer({ min: 1, max: 100 }), { nil: null }),
+  credit_cost: fc.constant(null),
+  effective_credit_cost: fc.constant(null),
   custom_name: fc.option(fc.string({ maxLength: 30 }), { nil: null }),
   description: fc.option(fc.string({ maxLength: 80 }), { nil: null }),
   version: fc.option(fc.string({ maxLength: 15 }), { nil: null }),
@@ -250,7 +437,7 @@ describe('Property-Based Tests: FileList', () => {
         fc.array(fileArbitrary, { minLength: 1, maxLength: 5 }),
         async (files) => {
           mockListFiles.mockResolvedValue(files);
-          const { unmount } = render(<FileList />);
+          const { unmount } = renderFileList();
 
           await screen.findAllByRole('button', { name: /baixar/i });
 
@@ -282,7 +469,7 @@ describe('Property-Based Tests: FileList', () => {
           );
 
           mockListFiles.mockResolvedValue(sorted);
-          const { unmount } = render(<FileList />);
+          const { unmount } = renderFileList();
 
           await screen.findAllByRole('button', { name: /baixar/i });
 
@@ -312,7 +499,7 @@ describe('Property-Based Tests: FileList', () => {
           const uniqueFiles = files.map((f, i) => ({ ...f, id: i + 1, filename: `file-${i + 1}-${f.filename}`, custom_name: null }));
 
           mockListFiles.mockResolvedValue(uniqueFiles);
-          const { unmount } = render(<FileList />);
+          const { unmount } = renderFileList();
 
           await screen.findAllByText(uniqueFiles[0].filename);
 

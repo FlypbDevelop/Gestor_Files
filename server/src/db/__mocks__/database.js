@@ -5,7 +5,8 @@ const database = {
   closeDatabase: jest.fn(),
   run: jest.fn(),
   get: jest.fn(),
-  all: jest.fn()
+  all: jest.fn(),
+  withTransaction: jest.fn()
 };
 
 module.exports = database;

@@ -26,4 +26,12 @@ router.put(
   userController.updateUserPlan
 );
 
+// POST /api/users/:id/credits - Conceder/ajustar créditos do usuário (ADMIN only)
+router.post(
+  '/:id/credits',
+  authMiddleware,
+  roleCheck(['ADMIN']),
+  userController.grantCredits
+);
+
 module.exports = router;

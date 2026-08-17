@@ -9,6 +9,7 @@ import {
   DownloadHistoryEntry,
   AdminStats,
   UserDashboard,
+  CreditTransaction,
   ApiRequestError,
   MostDownloadedFile,
 } from '../types';
@@ -88,8 +89,11 @@ class ApiClient {
     const formData = new FormData();
     formData.append('file', file);
     formData.append('allowedPlanIds', JSON.stringify(permissions.allowedPlanIds));
-    if (permissions.maxDownloadsPerUser !== null) {
+    if (permissions.maxDownloadsPerUser !== null && permissions.maxDownloadsPerUser !== undefined) {
       formData.append('maxDownloadsPerUser', String(permissions.maxDownloadsPerUser));
+    }
+    if (permissions.creditCost !== null && permissions.creditCost !== undefined) {
+      formData.append('creditCost', String(permissions.creditCost));
     }
     if (permissions.customName) formData.append('customName', permissions.customName);
     if (permissions.description) formData.append('description', permissions.description);
@@ -106,6 +110,24 @@ class ApiClient {
       permissions
     );
     return res.data.file;
+  }
+
+  // ---- Credits (admin) ----
+
+  async grantCredits(userId: number, amount: number): Promise<User> {
+    const res: AxiosResponse<{ user: User }> = await this.instance.post(
+      `/users/${userId}/credits`,
+      { amount }
+    );
+    return res.data.user;
+  }
+
+  async updatePlanMultiplier(planId: number, multiplier: number): Promise<Plan> {
+    const res: AxiosResponse<{ plan: Plan }> = await this.instance.put(
+      `/plans/${planId}/multiplier`,
+      { multiplier }
+    );
+    return res.data.plan;
   }
 
   async deleteFile(fileId: number): Promise<void> {
@@ -154,12 +176,16 @@ class ApiClient {
       currentPlan: { id: number; name: string; price: number; features: unknown };
       downloadHistory: DownloadHistoryEntry[];
       totalDownloads: number;
+      credits: number;
+      creditTransactions: CreditTransaction[];
     }> = await this.instance.get('/dashboard/user');
-    const { currentPlan, downloadHistory, totalDownloads } = res.data;
+    const { currentPlan, downloadHistory, totalDownloads, credits, creditTransactions } = res.data;
     return {
       plan: currentPlan as unknown as Plan,
       downloadHistory,
       totalDownloads,
+      credits,
+      creditTransactions,
     };
   }
 

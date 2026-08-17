@@ -74,7 +74,7 @@ async function getUserDashboard(req, res) {
 
     // Req 13.2: Current plan info
     const userWithPlan = await db.get(
-      `SELECT u.id, u.name, u.email, u.role, u.plan_id,
+      `SELECT u.id, u.name, u.email, u.role, u.plan_id, u.credits,
               p.name as plan_name, p.price as plan_price, p.features as plan_features
        FROM users u
        LEFT JOIN plans p ON u.plan_id = p.id
@@ -104,6 +104,17 @@ async function getUserDashboard(req, res) {
     // Req 13.3: Total downloads count
     const totalDownloads = downloadHistory.length;
 
+    // Credit balance and statement (avulso downloads / admin grants)
+    const creditTransactions = await db.all(
+      `SELECT ct.id, ct.amount, ct.reason, ct.created_at, f.filename
+       FROM credit_transactions ct
+       LEFT JOIN files f ON ct.file_id = f.id
+       WHERE ct.user_id = ?
+       ORDER BY ct.created_at DESC
+       LIMIT 100`,
+      [userId]
+    );
+
     // Parse plan features if stored as JSON string
     let planFeatures = null;
     if (userWithPlan.plan_features) {
@@ -122,7 +133,9 @@ async function getUserDashboard(req, res) {
         features: planFeatures
       },
       downloadHistory,
-      totalDownloads
+      totalDownloads,
+      credits: userWithPlan.credits || 0,
+      creditTransactions
     });
   } catch (error) {
     console.error('User dashboard error:', error);

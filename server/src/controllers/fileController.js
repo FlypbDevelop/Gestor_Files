@@ -27,12 +27,22 @@ async function uploadFile(req, res) {
       });
     }
 
-    const { customName, description, version } = req.body;
+    const { customName, description, version, creditCost } = req.body;
     const metadata = {
       customName: customName || null,
       description: description || null,
-      version: version || null
+      version: version || null,
+      creditCost: creditCost !== undefined && creditCost !== '' && creditCost !== null
+        ? parseInt(creditCost, 10)
+        : null
     };
+
+    // creditCost from form data arrives as string; validate integer
+    if (metadata.creditCost !== null && (isNaN(metadata.creditCost) || metadata.creditCost <= 0)) {
+      return res.status(400).json({
+        error: { code: 'INVALID_CREDIT_COST', message: 'Custo em créditos deve ser um número inteiro positivo' }
+      });
+    }
 
     const fileRecord = await uploadService.processUpload(req.file, req.user.userId, metadata);
 
@@ -78,7 +88,7 @@ async function updatePermissions(req, res) {
       });
     }
 
-    const { allowedPlanIds, maxDownloadsPerUser, customName, description, version } = req.body;
+    const { allowedPlanIds, maxDownloadsPerUser, customName, description, version, creditCost } = req.body;
 
     if (!Array.isArray(allowedPlanIds)) {
       return res.status(400).json({
@@ -89,11 +99,23 @@ async function updatePermissions(req, res) {
       });
     }
 
+    let normalizedCreditCost = undefined;
+    if (creditCost !== undefined && creditCost !== null) {
+      normalizedCreditCost = parseInt(creditCost, 10);
+      if (isNaN(normalizedCreditCost) || normalizedCreditCost <= 0) {
+        return res.status(400).json({
+          error: { code: 'INVALID_CREDIT_COST', message: 'Custo em créditos deve ser um número inteiro positivo' }
+        });
+      }
+    } else if (creditCost === null) {
+      normalizedCreditCost = null;
+    }
+
     const updatedFile = await fileManager.updateFilePermissions(
       fileId,
       allowedPlanIds,
       maxDownloadsPerUser !== undefined ? maxDownloadsPerUser : null,
-      { customName, description, version }
+      { customName, description, version, creditCost: normalizedCreditCost }
     );
 
     if (!updatedFile) {
