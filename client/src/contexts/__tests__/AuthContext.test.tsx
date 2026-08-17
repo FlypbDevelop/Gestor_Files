@@ -23,6 +23,7 @@ const mockUser = {
   email: 'test@example.com',
   role: 'USER' as const,
   plan_id: 1,
+  credits: 0,
   created_at: '2024-01-01',
   updated_at: '2024-01-01',
 };

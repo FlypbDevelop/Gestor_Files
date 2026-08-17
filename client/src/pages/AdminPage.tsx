@@ -6,9 +6,10 @@ import FileUpload from '../components/admin/FileUpload';
 import FileManagement from '../components/admin/FileManagement';
 import AdminDashboard from '../components/admin/AdminDashboard';
 import UserManagement from '../components/admin/UserManagement';
+import PlanManagement from '../components/admin/PlanManagement';
 import { Plan, File } from '../types';
 
-type Tab = 'dashboard' | 'arquivos' | 'usuarios';
+type Tab = 'dashboard' | 'arquivos' | 'usuarios' | 'planos';
 
 /**
  * AdminPage - Painel admin com abas: Dashboard, Arquivos e Usuários.
@@ -49,6 +50,7 @@ export default function AdminPage() {
     { id: 'dashboard', label: 'Dashboard' },
     { id: 'arquivos', label: 'Arquivos' },
     { id: 'usuarios', label: 'Usuários' },
+    { id: 'planos', label: 'Planos' },
   ];
 
   return (
@@ -118,6 +120,8 @@ export default function AdminPage() {
         )}
 
         {activeTab === 'usuarios' && <UserManagement />}
+
+        {activeTab === 'planos' && <PlanManagement />}
       </main>
     </div>
   );

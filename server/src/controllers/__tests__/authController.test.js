@@ -198,7 +198,7 @@ describe('AuthController', () => {
       await authController.getCurrentUser(req, res);
 
       expect(db.get).toHaveBeenCalledWith(
-        'SELECT id, name, email, role, plan_id, created_at FROM users WHERE id = ?',
+        'SELECT id, name, email, role, plan_id, credits, created_at FROM users WHERE id = ?',
         [1]
       );
       expect(res.status).toHaveBeenCalledWith(200);

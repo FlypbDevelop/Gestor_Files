@@ -173,19 +173,20 @@ describe('AuthService - Property-Based Tests', () => {
             // Act: Register new user
             const result = await authService.register(name, email, password);
 
-            // Assert: User has role USER and plan_id 1
+            // Assert: User has role USER, plan_id 1 (Free) and starts with 0 credits
             expect(result).toMatchObject({
               id: 1,
               name: name,
               email: email,
               role: 'USER',
-              plan_id: 1
+              plan_id: 1,
+              credits: 0
             });
 
             // Verify database call
             expect(db.run).toHaveBeenCalledWith(
-              'INSERT INTO users (name, email, password_hash, role, plan_id) VALUES (?, ?, ?, ?, ?)',
-              expect.arrayContaining([name, email, expect.any(String), 'USER', 1])
+              'INSERT INTO users (name, email, password_hash, role, plan_id, credits) VALUES (?, ?, ?, ?, ?, ?)',
+              expect.arrayContaining([name, email, expect.any(String), 'USER', 1, 0])
             );
           }
         ),

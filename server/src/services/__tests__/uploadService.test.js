@@ -112,6 +112,7 @@ describe('UploadService', () => {
           null,
           null,
           null,
+          null,
           null
         ]
       );
@@ -162,6 +163,30 @@ describe('UploadService', () => {
 
       // Should still throw the original database error
       await expect(uploadService.processUpload(mockFile, 1)).rejects.toThrow('Database error');
+    });
+
+    it('should store creditCost when the file is avulso', async () => {
+      db.run.mockResolvedValue({ lastID: 43 });
+
+      const result = await uploadService.processUpload(mockFile, 1, { creditCost: 7 });
+
+      expect(db.run).toHaveBeenCalledWith(
+        expect.stringContaining('INSERT INTO files'),
+        expect.arrayContaining([7])
+      );
+      expect(result.credit_cost).toBe(7);
+    });
+
+    it('should reject non-positive creditCost with INVALID_CREDIT_COST', async () => {
+      await expect(
+        uploadService.processUpload(mockFile, 1, { creditCost: 0 })
+      ).rejects.toMatchObject({ code: 'INVALID_CREDIT_COST', statusCode: 400 });
+
+      await expect(
+        uploadService.processUpload(mockFile, 1, { creditCost: -2 })
+      ).rejects.toMatchObject({ code: 'INVALID_CREDIT_COST', statusCode: 400 });
+
+      expect(db.run).not.toHaveBeenCalled();
     });
   });
 

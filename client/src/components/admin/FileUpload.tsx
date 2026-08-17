@@ -15,6 +15,7 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
   const [selectedFile, setSelectedFile] = useState<globalThis.File | null>(null);
   const [selectedPlanIds, setSelectedPlanIds] = useState<number[]>([]);
   const [maxDownloads, setMaxDownloads] = useState('');
+  const [creditCost, setCreditCost] = useState('');
   const [customName, setCustomName] = useState('');
   const [description, setDescription] = useState('');
   const [version, setVersion] = useState('');
@@ -44,14 +45,21 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
       setValidationError('Selecione um arquivo para enviar.');
       return false;
     }
-    if (selectedPlanIds.length === 0) {
-      setValidationError('Selecione pelo menos um plano.');
+    if (selectedPlanIds.length === 0 && creditCost.trim() === '') {
+      setValidationError('Selecione pelo menos um plano ou defina um custo em créditos (avulso).');
       return false;
     }
     if (maxDownloads !== '') {
       const parsed = parseInt(maxDownloads, 10);
       if (isNaN(parsed) || parsed <= 0 || String(parsed) !== maxDownloads.trim()) {
         setValidationError('Máximo de downloads deve ser um número inteiro positivo.');
+        return false;
+      }
+    }
+    if (creditCost.trim() !== '') {
+      const parsed = parseInt(creditCost, 10);
+      if (isNaN(parsed) || parsed <= 0 || String(parsed) !== creditCost.trim()) {
+        setValidationError('Custo em créditos deve ser um número inteiro positivo.');
         return false;
       }
     }
@@ -62,6 +70,7 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
     setSelectedFile(null);
     setSelectedPlanIds([]);
     setMaxDownloads('');
+    setCreditCost('');
     setCustomName('');
     setDescription('');
     setVersion('');
@@ -83,9 +92,12 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
 
     setUploading(true);
     try {
+      const creditCostValue = creditCost.trim() === '' ? null : parseInt(creditCost, 10);
+
       const uploaded = await apiClient.uploadFile(selectedFile!, {
         allowedPlanIds: selectedPlanIds,
         maxDownloadsPerUser,
+        creditCost: creditCostValue,
         customName: customName.trim() || undefined,
         description: description.trim() || undefined,
         version: version.trim() || undefined,
@@ -182,7 +194,8 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
         {/* Plan selection */}
         <div>
           <label className="block text-sm font-medium text-gray-700 mb-2">
-            Planos com acesso
+            Planos com acesso{' '}
+            <span className="text-gray-400 font-normal">(opcional se o arquivo for avulso)</span>
           </label>
           {plans.length === 0 ? (
             <p className="text-sm text-gray-400">Nenhum plano disponível.</p>
@@ -202,6 +215,27 @@ export default function FileUpload({ plans, onUploadComplete }: FileUploadProps)
               ))}
             </div>
           )}
+        </div>
+
+        {/* Avulso credit cost */}
+        <div>
+          <label className="block text-sm font-medium text-gray-700 mb-1">
+            Custo em créditos (download avulso){' '}
+            <span className="text-gray-400 font-normal">(deixe em branco para não ser avulso)</span>
+          </label>
+          <input
+            type="number"
+            min="1"
+            step="1"
+            value={creditCost}
+            onChange={(e) => { setCreditCost(e.target.value); setValidationError(''); }}
+            disabled={uploading}
+            placeholder="Ex: 5"
+            className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+          />
+          <p className="mt-1 text-xs text-gray-500">
+            O valor pago pelo usuário será o custo base x multiplicador do plano dele (definido na aba Planos).
+          </p>
         </div>
 
         {/* Max downloads per user */}

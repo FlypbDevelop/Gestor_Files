@@ -87,12 +87,13 @@ describe('AuthService', () => {
         name: 'Test User',
         email: 'test@example.com',
         role: 'USER',
-        plan_id: 1
+        plan_id: 1,
+        credits: 0
       });
 
       expect(db.run).toHaveBeenCalledWith(
-        'INSERT INTO users (name, email, password_hash, role, plan_id) VALUES (?, ?, ?, ?, ?)',
-        expect.arrayContaining(['Test User', 'test@example.com', expect.any(String), 'USER', 1])
+        'INSERT INTO users (name, email, password_hash, role, plan_id, credits) VALUES (?, ?, ?, ?, ?, ?)',
+        expect.arrayContaining(['Test User', 'test@example.com', expect.any(String), 'USER', 1, 0])
       );
     });
 
@@ -139,7 +140,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         password_hash: passwordHash,
         role: 'USER',
-        plan_id: 1
+        plan_id: 1,
+        credits: 0
       });
 
       const result = await authService.login('test@example.com', 'password123');
@@ -151,7 +153,8 @@ describe('AuthService', () => {
         name: 'Test User',
         email: 'test@example.com',
         role: 'USER',
-        plan_id: 1
+        plan_id: 1,
+        credits: 0
       });
 
       // Verify token is valid JWT
@@ -182,7 +185,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         password_hash: passwordHash,
         role: 'USER',
-        plan_id: 1
+        plan_id: 1,
+        credits: 0
       });
 
       await expect(
@@ -203,7 +207,8 @@ describe('AuthService', () => {
         email: 'test@example.com',
         password_hash: passwordHash,
         role: 'USER',
-        plan_id: 1
+        plan_id: 1,
+        credits: 0
       });
 
       const result = await authService.login('test@example.com', 'password123');

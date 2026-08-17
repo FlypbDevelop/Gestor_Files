@@ -12,6 +12,7 @@ export interface User {
   email: string;
   role: UserRole;
   plan_id: number;
+  credits: number;
   created_at: string;
   updated_at: string;
 }
@@ -21,6 +22,8 @@ export interface PlanFeatures {
   maxFileSize: number; // MB
   prioritySupport: boolean;
   customFeatures: string[];
+  /** Multiplicador do custo em créditos dos downloads avulsos (ex.: Free x2, Premium x1) */
+  creditMultiplier?: number;
 }
 
 export interface Plan {
@@ -41,6 +44,8 @@ export interface File {
   uploaded_by: number;
   allowed_plan_ids: number[];
   max_downloads_per_user: number | null; // null = unlimited
+  /** Custo base em créditos para download avulso (null = não é avulso) */
+  credit_cost: number | null;
   custom_name: string | null;
   description: string | null;
   version: string | null;
@@ -62,6 +67,8 @@ export interface FilePermissions {
   customName?: string | null;
   description?: string | null;
   version?: string | null;
+  /** Custo base em créditos para download avulso (null/undefined = não avulso) */
+  creditCost?: number | null;
 }
 
 // ---- Extended / Derived Types ----
@@ -69,6 +76,18 @@ export interface FilePermissions {
 /** File with remaining download count for the current user */
 export interface FileWithDownloadsRemaining extends File {
   downloads_remaining: number | null; // null = unlimited
+  /** Custo efetivo em créditos (base x multiplicador do plano) para downloads avulsos */
+  effective_credit_cost?: number | null;
+}
+
+/** Lançamento do extrato de créditos (credit_transactions) */
+export interface CreditTransaction {
+  id: number;
+  amount: number;
+  reason: 'DOWNLOAD' | 'GRANT' | 'ADJUST' | 'PURCHASE' | string;
+  file_id: number | null;
+  filename?: string | null;
+  created_at: string;
 }
 
 // ---- API Response Types ----
@@ -105,6 +124,8 @@ export interface UserDashboard {
   plan: Plan;
   downloadHistory: DownloadHistoryEntry[];
   totalDownloads: number;
+  credits: number;
+  creditTransactions: CreditTransaction[];
 }
 
 // ---- Error Types ----

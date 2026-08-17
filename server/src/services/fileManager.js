@@ -12,16 +12,16 @@ const UPLOAD_DIR = path.join(__dirname, '../../uploads');
 
 /**
  * Create a file record in the database
- * @param {Object} fileData - {filename, path, mime_type, size, uploaded_by}
+ * @param {Object} fileData - {filename, path, mime_type, size, uploaded_by, creditCost}
  * @returns {Promise<Object>} Created file record
  */
 async function createFile(fileData) {
-  const { filename, path: filePath, mime_type, size, uploaded_by } = fileData;
+  const { filename, path: filePath, mime_type, size, uploaded_by, creditCost = null } = fileData;
 
   const result = await db.run(
-    `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user)
-     VALUES (?, ?, ?, ?, ?, ?, ?)`,
-    [filename, filePath, mime_type, size, uploaded_by, '[]', null]
+    `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user, credit_cost)
+     VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+    [filename, filePath, mime_type, size, uploaded_by, '[]', null, creditCost]
   );
 
   return {
@@ -33,6 +33,7 @@ async function createFile(fileData) {
     uploaded_by,
     allowed_plan_ids: [],
     max_downloads_per_user: null,
+    credit_cost: creditCost,
     created_at: new Date().toISOString()
   };
 }
@@ -54,6 +55,8 @@ async function getFileById(fileId) {
 
 /**
  * List files accessible to a plan, including downloads_remaining per file
+ * Files included when: the plan has access OR the file is avulso (credit_cost defined)
+ * Avulso files carry an effective_credit_cost based on the user's plan multiplier.
  * @param {number} planId
  * @param {number} userId - For calculating remaining downloads
  * @returns {Promise<Object[]>} Array of file records with downloads_remaining
@@ -67,11 +70,15 @@ async function listFilesForPlan(planId, userId) {
     [userId]
   );
 
-  // Filter files where planId is in allowed_plan_ids and compute downloads_remaining
+  const accessValidator = require('./accessValidator');
+  const multiplier = await accessValidator.getCreditMultiplier(planId);
+
   return files
     .filter(file => {
       const allowedPlanIds = JSON.parse(file.allowed_plan_ids || '[]');
-      return allowedPlanIds.includes(planId);
+      const isAvulso =
+        file.credit_cost !== null && file.credit_cost !== undefined;
+      return allowedPlanIds.includes(planId) || isAvulso;
     })
     .map(file => {
       const allowedPlanIds = JSON.parse(file.allowed_plan_ids || '[]');
@@ -80,10 +87,16 @@ async function listFilesForPlan(planId, userId) {
           ? null
           : file.max_downloads_per_user - file.downloads_count;
 
+      const effectiveCreditCost =
+        file.credit_cost === null || file.credit_cost === undefined
+          ? null
+          : accessValidator.computeEffectiveCreditCost(file.credit_cost, multiplier);
+
       return {
         ...file,
         allowed_plan_ids: allowedPlanIds,
-        downloads_remaining: downloadsRemaining
+        downloads_remaining: downloadsRemaining,
+        effective_credit_cost: effectiveCreditCost
       };
     });
 }
@@ -117,11 +130,11 @@ async function deleteFile(fileId) {
 }
 
 /**
- * Update file permissions and metadata
+ * Update file permissions, avulso credit cost and metadata
  * @param {number} fileId
  * @param {number[]} allowedPlanIds - Array of valid integer plan IDs
  * @param {number|null} maxDownloadsPerUser - Positive integer or NULL
- * @param {Object} metadata - { customName, description, version }
+ * @param {Object} metadata - { customName, description, version, creditCost }
  * @returns {Promise<Object>} Updated file record
  */
 async function updateFilePermissions(fileId, allowedPlanIds, maxDownloadsPerUser, metadata = {}) {
@@ -152,17 +165,34 @@ async function updateFilePermissions(fileId, allowedPlanIds, maxDownloadsPerUser
     }
   }
 
+  const { customName, description, version, creditCost } = metadata;
+
+  // Validate creditCost: positive integer or null/undefined (not avulso)
+  let normalizedCreditCost = null;
+  if (creditCost !== undefined && creditCost !== null) {
+    if (!Number.isInteger(creditCost) || creditCost <= 0) {
+      const error = new Error('creditCost must be a positive integer or NULL');
+      error.code = 'INVALID_CREDIT_COST';
+      error.statusCode = 400;
+      throw error;
+    }
+    normalizedCreditCost = creditCost;
+  } else if (creditCost === null) {
+    normalizedCreditCost = null;
+  }
+
   const normalizedMax = maxDownloadsPerUser === undefined ? null : maxDownloadsPerUser;
-  const { customName, description, version } = metadata;
 
   await db.run(
     `UPDATE files SET allowed_plan_ids = ?, max_downloads_per_user = ?,
+      credit_cost = ?,
       custom_name = ?, description = ?, version = ?,
       updated_at = CURRENT_TIMESTAMP
      WHERE id = ?`,
     [
       JSON.stringify(allowedPlanIds),
       normalizedMax,
+      normalizedCreditCost,
       customName !== undefined ? (customName || null) : null,
       description !== undefined ? (description || null) : null,
       version !== undefined ? (version || null) : null,

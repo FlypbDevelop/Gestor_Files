@@ -28,6 +28,7 @@ vi.mock('../../services/apiClient', () => ({
     listAllUsers: vi.fn(),
     listPlans: vi.fn(),
     updateUserPlan: vi.fn(),
+    grantCredits: vi.fn(),
   },
 }));
 
@@ -73,6 +74,7 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [1, 2],
     max_downloads_per_user: 5,
+    credit_cost: null,
     custom_name: null,
     description: null,
     version: null,
@@ -89,6 +91,7 @@ const sampleFiles: FileWithDownloadsRemaining[] = [
     uploaded_by: 1,
     allowed_plan_ids: [2],
     max_downloads_per_user: null,
+    credit_cost: null,
     custom_name: null,
     description: null,
     version: null,
@@ -105,6 +108,7 @@ const sampleUsers: User[] = [
     email: 'alice@example.com',
     role: 'USER',
     plan_id: 1,
+    credits: 0,
     created_at: '2024-01-01T00:00:00Z',
     updated_at: '2024-01-01T00:00:00Z',
   },
@@ -114,6 +118,7 @@ const sampleUsers: User[] = [
     email: 'bob@example.com',
     role: 'ADMIN',
     plan_id: 3,
+    credits: 12,
     created_at: '2024-01-02T00:00:00Z',
     updated_at: '2024-01-02T00:00:00Z',
   },
@@ -165,7 +170,9 @@ describe('FileUpload component', () => {
     Object.defineProperty(fileInput, 'files', { value: [file], configurable: true });
     fireEvent.change(fileInput);
     fireEvent.click(screen.getByRole('button', { name: /enviar arquivo/i }));
-    expect(await screen.findByText('Selecione pelo menos um plano.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Selecione pelo menos um plano ou defina um custo em créditos (avulso).')
+    ).toBeInTheDocument();
   });
 
   it('shows validation error when max downloads is not a positive integer', async () => {
@@ -207,7 +214,7 @@ describe('FileUpload component', () => {
     fireEvent.click(screen.getByLabelText('Premium'));
     fireEvent.change(screen.getByPlaceholderText(/ilimitado/i), { target: { value: '5' } });
     fireEvent.click(screen.getByRole('button', { name: /enviar arquivo/i }));
-    await waitFor(() => expect(mockUploadFile).toHaveBeenCalledWith(file, { allowedPlanIds: [1, 2], maxDownloadsPerUser: 5 }));
+    await waitFor(() => expect(mockUploadFile).toHaveBeenCalledWith(file, { allowedPlanIds: [1, 2], maxDownloadsPerUser: 5, creditCost: null }));
     await waitFor(() => expect(onUploadComplete).toHaveBeenCalledWith(uploadedFile));
   });
 
@@ -258,7 +265,7 @@ describe('FileUpload component', () => {
     fireEvent.change(fileInput);
     fireEvent.click(screen.getByLabelText('Premium'));
     fireEvent.click(screen.getByRole('button', { name: /enviar arquivo/i }));
-    await waitFor(() => expect(mockUploadFile).toHaveBeenCalledWith(file, { allowedPlanIds: [2], maxDownloadsPerUser: null }));
+    await waitFor(() => expect(mockUploadFile).toHaveBeenCalledWith(file, { allowedPlanIds: [2], maxDownloadsPerUser: null, creditCost: null }));
   });
 });
 
@@ -340,7 +347,9 @@ describe('FileManagement component', () => {
     fireEvent.click(screen.getByLabelText('Básico'));
     fireEvent.click(screen.getByLabelText('Premium'));
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-    expect(await screen.findByText('Selecione pelo menos um plano.')).toBeInTheDocument();
+    expect(
+      await screen.findByText('Selecione pelo menos um plano ou defina um custo em créditos (avulso).')
+    ).toBeInTheDocument();
   });
 
   it('calls updateFilePermissions with correct args on save (Req 5.1, 5.2)', async () => {
@@ -354,7 +363,7 @@ describe('FileManagement component', () => {
     const maxInput = screen.getByPlaceholderText(/ilimitado/i);
     fireEvent.change(maxInput, { target: { value: '10' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [2], maxDownloadsPerUser: 10, customName: null, description: null, version: null }));
+    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [2], maxDownloadsPerUser: 10, creditCost: null, customName: null, description: null, version: null }));
     await waitFor(() => expect(screen.queryByText('Editar arquivo')).not.toBeInTheDocument());
   });
 
@@ -378,7 +387,7 @@ describe('FileManagement component', () => {
     const maxInput = screen.getByPlaceholderText(/ilimitado/i);
     fireEvent.change(maxInput, { target: { value: '' } });
     fireEvent.click(screen.getByRole('button', { name: /salvar/i }));
-    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [1, 2], maxDownloadsPerUser: null, customName: null, description: null, version: null }));
+    await waitFor(() => expect(mockUpdateFilePermissions).toHaveBeenCalledWith(1, { allowedPlanIds: [1, 2], maxDownloadsPerUser: null, creditCost: null, customName: null, description: null, version: null }));
   });
 
   it('calls deleteFile and removes file from list after confirmation', async () => {

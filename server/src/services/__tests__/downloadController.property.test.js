@@ -107,8 +107,8 @@ describe('DownloadController - Property-Based Tests', () => {
 
             // Assert: INSERT into downloads was called with correct params (Req 8.1)
             expect(db.run).toHaveBeenCalledWith(
-              'INSERT INTO downloads (user_id, file_id, ip_address) VALUES (?, ?, ?)',
-              [userId, fileId, ipAddress]
+              'INSERT INTO downloads (user_id, file_id, ip_address, credit_cost) VALUES (?, ?, ?, ?)',
+              [userId, fileId, ipAddress, null]
             );
           }
         ),

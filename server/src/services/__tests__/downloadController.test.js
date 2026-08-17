@@ -12,7 +12,9 @@ const {
   processDownload,
   logDownload,
   streamFile,
-  getRealIpAddress
+  getRealIpAddress,
+  debitCredits,
+  rollbackCreditDownload
 } = require('../downloadController');
 
 // ─── Helpers ──────────────────────────────────────────────────────────────────
@@ -87,17 +89,30 @@ describe('logDownload', () => {
     const result = await logDownload(7, 3, '1.2.3.4');
 
     expect(db.run).toHaveBeenCalledWith(
-      'INSERT INTO downloads (user_id, file_id, ip_address) VALUES (?, ?, ?)',
-      [7, 3, '1.2.3.4']
+      'INSERT INTO downloads (user_id, file_id, ip_address, credit_cost) VALUES (?, ?, ?, ?)',
+      [7, 3, '1.2.3.4', null]
     );
 
     expect(result).toMatchObject({
       id: 42,
       user_id: 7,
       file_id: 3,
-      ip_address: '1.2.3.4'
+      ip_address: '1.2.3.4',
+      credit_cost: null
     });
     expect(result.downloaded_at).toBeDefined();
+  });
+
+  it('should store credit_cost when logging an avulso download', async () => {
+    db.run.mockResolvedValue({ lastID: 43 });
+
+    const result = await logDownload(7, 3, '1.2.3.4', 5);
+
+    expect(db.run).toHaveBeenCalledWith(
+      'INSERT INTO downloads (user_id, file_id, ip_address, credit_cost) VALUES (?, ?, ?, ?)',
+      [7, 3, '1.2.3.4', 5]
+    );
+    expect(result.credit_cost).toBe(5);
   });
 
   it('should propagate database errors', async () => {
@@ -259,12 +274,101 @@ describe('processDownload', () => {
 
     // Log was created before streaming
     expect(db.run).toHaveBeenCalledWith(
-      'INSERT INTO downloads (user_id, file_id, ip_address) VALUES (?, ?, ?)',
-      [1, 1, '1.2.3.4']
+      'INSERT INTO downloads (user_id, file_id, ip_address, credit_cost) VALUES (?, ?, ?, ?)',
+      [1, 1, '1.2.3.4', null]
     );
 
     // File was streamed
     expect(mockStream.pipe).toHaveBeenCalledWith(res);
+  });
+
+  it('should return 402 when credits are insufficient for an avulso download', async () => {
+    accessValidator.validateDownloadAccess.mockResolvedValue({
+      allowed: false,
+      reason: 'INSUFFICIENT_CREDITS',
+      required: 5,
+      balance: 2
+    });
+
+    const res = makeRes();
+    await processDownload(1, 1, '1.2.3.4', res);
+
+    expect(res.status).toHaveBeenCalledWith(402);
+    expect(res.json).toHaveBeenCalledWith({
+      error: {
+        code: 'INSUFFICIENT_CREDITS',
+        message: 'Créditos insuficientes para este download',
+        required: 5,
+        balance: 2
+      }
+    });
+    expect(db.run).not.toHaveBeenCalled();
+  });
+
+  it('should debit credits and stream when avulso download is allowed', async () => {
+    accessValidator.validateDownloadAccess.mockResolvedValue({ allowed: true, creditCost: 3 });
+    fileManager.getFileById.mockResolvedValue(MOCK_FILE);
+
+    db.withTransaction.mockImplementation(fn => fn());
+    db.run
+      .mockResolvedValueOnce({ changes: 1 }) // guarded credit debit
+      .mockResolvedValueOnce({ lastID: 77 })  // credit_transactions insert
+      .mockResolvedValueOnce({ lastID: 10 }); // downloads insert
+
+    const mockStream = { on: jest.fn(), pipe: jest.fn() };
+    mockStream.on.mockImplementation((event, handler) => {
+      if (event === 'end') setImmediate(handler);
+      return mockStream;
+    });
+    fs.statSync.mockReturnValue({ size: 2048 });
+    fs.createReadStream.mockReturnValue(mockStream);
+
+    const res = makeRes();
+    await processDownload(1, 1, '1.2.3.4', res);
+
+    expect(db.run).toHaveBeenCalledWith(
+      'UPDATE users SET credits = credits - ? WHERE id = ? AND credits >= ?',
+      [3, 1, 3]
+    );
+    expect(db.run).toHaveBeenCalledWith(
+      'INSERT INTO credit_transactions (user_id, amount, reason, file_id) VALUES (?, ?, ?, ?)',
+      [1, -3, 'DOWNLOAD', 1]
+    );
+    expect(db.run).toHaveBeenCalledWith(
+      'INSERT INTO downloads (user_id, file_id, ip_address, credit_cost) VALUES (?, ?, ?, ?)',
+      [1, 1, '1.2.3.4', 3]
+    );
+    expect(mockStream.pipe).toHaveBeenCalledWith(res);
+  });
+
+  it('should refund credits and remove logs when avulso stream fails', async () => {
+    accessValidator.validateDownloadAccess.mockResolvedValue({ allowed: true, creditCost: 3 });
+    fileManager.getFileById.mockResolvedValue(MOCK_FILE);
+
+    db.withTransaction.mockImplementation(fn => fn());
+    db.run
+      .mockResolvedValueOnce({ changes: 1 }) // guarded credit debit
+      .mockResolvedValueOnce({ lastID: 77 })  // credit_transactions insert
+      .mockResolvedValueOnce({ lastID: 10 })  // downloads insert
+      .mockResolvedValueOnce({ changes: 1 })  // rollback: delete transaction
+      .mockResolvedValueOnce({ changes: 1 })  // rollback: refund credits
+      .mockResolvedValueOnce({ changes: 1 }); // rollback: delete download log
+
+    const mockStream = { on: jest.fn(), pipe: jest.fn() };
+    const streamError = new Error('disk read error');
+    mockStream.on.mockImplementation((event, handler) => {
+      if (event === 'error') setImmediate(() => handler(streamError));
+      return mockStream;
+    });
+    fs.statSync.mockReturnValue({ size: 2048 });
+    fs.createReadStream.mockReturnValue(mockStream);
+
+    const res = makeRes();
+    await processDownload(1, 1, '1.2.3.4', res);
+
+    expect(db.run).toHaveBeenCalledWith('DELETE FROM credit_transactions WHERE id = ?', [77]);
+    expect(db.run).toHaveBeenCalledWith('UPDATE users SET credits = credits + ? WHERE id = ?', [3, 1]);
+    expect(db.run).toHaveBeenCalledWith('DELETE FROM downloads WHERE id = ?', [10]);
   });
 
   it('should rollback the log entry when streaming fails', async () => {
@@ -289,5 +393,64 @@ describe('processDownload', () => {
 
     // Rollback DELETE should have been called with the log id
     expect(db.run).toHaveBeenCalledWith('DELETE FROM downloads WHERE id = ?', [55]);
+  });
+});
+
+// ─── debitCredits / rollbackCreditDownload ─────────────────────────────────────
+
+describe('debitCredits', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should debit, write ledger and log inside a transaction when balance is enough', async () => {
+    db.withTransaction.mockImplementation(fn => fn());
+    db.run
+      .mockResolvedValueOnce({ changes: 1 })
+      .mockResolvedValueOnce({ lastID: 50 })
+      .mockResolvedValueOnce({ lastID: 51 });
+
+    const result = await debitCredits(1, 9, 4, '1.2.3.4');
+
+    expect(db.withTransaction).toHaveBeenCalled();
+    expect(result).toMatchObject({ transactionId: 50, cost: 4 });
+    expect(result.downloadLog).toMatchObject({ id: 51, credit_cost: 4 });
+  });
+
+  it('should throw INSUFFICIENT_CREDITS and roll back when balance is not enough', async () => {
+    db.withTransaction.mockImplementation(fn => fn());
+    db.run.mockResolvedValueOnce({ changes: 0 });
+
+    await expect(debitCredits(1, 9, 4, '1.2.3.4')).rejects.toMatchObject({
+      code: 'INSUFFICIENT_CREDITS'
+    });
+  });
+
+  it('should propagate transaction errors', async () => {
+    db.withTransaction.mockRejectedValue(new Error('transaction failed'));
+
+    await expect(debitCredits(1, 9, 4, '1.2.3.4')).rejects.toThrow('transaction failed');
+  });
+});
+
+describe('rollbackCreditDownload', () => {
+  beforeEach(() => jest.clearAllMocks());
+
+  it('should refund credits, delete ledger entry and download log', async () => {
+    db.run.mockResolvedValue({ changes: 1 });
+
+    await rollbackCreditDownload(1, 4, 50, 51);
+
+    expect(db.run).toHaveBeenCalledWith('DELETE FROM credit_transactions WHERE id = ?', [50]);
+    expect(db.run).toHaveBeenCalledWith('UPDATE users SET credits = credits + ? WHERE id = ?', [4, 1]);
+    expect(db.run).toHaveBeenCalledWith('DELETE FROM downloads WHERE id = ?', [51]);
+  });
+
+  it('should only delete the download log when there is no credit transaction', async () => {
+    db.run.mockResolvedValue({ changes: 1 });
+
+    await rollbackCreditDownload(1, null, null, 51);
+
+    expect(db.run).not.toHaveBeenCalledWith('DELETE FROM credit_transactions WHERE id = ?', [null]);
+    expect(db.run).not.toHaveBeenCalledWith(expect.stringContaining('credits +'), expect.anything());
+    expect(db.run).toHaveBeenCalledWith('DELETE FROM downloads WHERE id = ?', [51]);
   });
 });

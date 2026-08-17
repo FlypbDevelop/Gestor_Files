@@ -57,7 +57,7 @@ async function getDownloadHistory(req, res) {
     const userId = req.user.userId;
 
     const downloads = await db.all(
-      `SELECT d.id, d.downloaded_at, f.filename, f.mime_type, f.size
+      `SELECT d.id, d.downloaded_at, d.credit_cost, f.filename, f.mime_type, f.size
        FROM downloads d
        JOIN files f ON d.file_id = f.id
        WHERE d.user_id = ?

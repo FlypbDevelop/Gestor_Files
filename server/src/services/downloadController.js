@@ -8,6 +8,8 @@ const fileManager = require('./fileManager');
  * DownloadController Service
  * Handles file download validation, logging, and streaming
  * Requirements: 7.1, 7.2, 7.3, 7.4, 8.1, 8.3, 8.4, 15.2, 15.3
+ * Avulso downloads: files.credit_cost defined -> charged in credits
+ * (debit + transaction ledger + log happen atomically in a SQLite transaction)
  */
 
 const UPLOAD_DIR = path.join(__dirname, '../../uploads');
@@ -40,12 +42,13 @@ function getRealIpAddress(req) {
  * @param {number} userId
  * @param {number} fileId
  * @param {string} ipAddress
- * @returns {Promise<{id: number, user_id: number, file_id: number, ip_address: string, downloaded_at: string}>}
+ * @param {number|null} creditCost - Credits charged for an avulso download
+ * @returns {Promise<{id: number, user_id: number, file_id: number, ip_address: string, credit_cost: number|null, downloaded_at: string}>}
  */
-async function logDownload(userId, fileId, ipAddress) {
+async function logDownload(userId, fileId, ipAddress, creditCost = null) {
   const result = await db.run(
-    'INSERT INTO downloads (user_id, file_id, ip_address) VALUES (?, ?, ?)',
-    [userId, fileId, ipAddress]
+    'INSERT INTO downloads (user_id, file_id, ip_address, credit_cost) VALUES (?, ?, ?, ?)',
+    [userId, fileId, ipAddress, creditCost]
   );
 
   return {
@@ -53,8 +56,63 @@ async function logDownload(userId, fileId, ipAddress) {
     user_id: userId,
     file_id: fileId,
     ip_address: ipAddress,
+    credit_cost: creditCost,
     downloaded_at: new Date().toISOString()
   };
+}
+
+/**
+ * Atomically debit credits for an avulso download.
+ * Inside a single SQLite transaction: guarded balance check + debit,
+ * ledger entry, and download log. If the balance is insufficient the
+ * transaction rolls back and an INSUFFICIENT_CREDITS error is thrown.
+ * @param {number} userId
+ * @param {number} fileId
+ * @param {number} cost
+ * @param {string} ipAddress
+ * @returns {Promise<{downloadLog: Object, transactionId: number, cost: number}>}
+ */
+async function debitCredits(userId, fileId, cost, ipAddress) {
+  return db.withTransaction(async () => {
+    // Guarded UPDATE only debits when there is enough balance (race-safe)
+    const debit = await db.run(
+      'UPDATE users SET credits = credits - ? WHERE id = ? AND credits >= ?',
+      [cost, userId, cost]
+    );
+
+    if (debit.changes === 0) {
+      const error = new Error('INSUFFICIENT_CREDITS');
+      error.code = 'INSUFFICIENT_CREDITS';
+      throw error;
+    }
+
+    const ledger = await db.run(
+      'INSERT INTO credit_transactions (user_id, amount, reason, file_id) VALUES (?, ?, ?, ?)',
+      [userId, -cost, 'DOWNLOAD', fileId]
+    );
+
+    const downloadLog = await logDownload(userId, fileId, ipAddress, cost);
+
+    return { downloadLog, transactionId: ledger.lastID, cost };
+  });
+}
+
+/**
+ * Compensating rollback after a stream failure: refund credits, remove the
+ * ledger entry and the download log so the user is not charged for a
+ * download that never completed.
+ * @param {number} userId
+ * @param {number} cost
+ * @param {number|null} transactionId
+ * @param {number} downloadLogId
+ * @returns {Promise<void>}
+ */
+async function rollbackCreditDownload(userId, cost, transactionId, downloadLogId) {
+  if (transactionId !== null) {
+    await db.run('DELETE FROM credit_transactions WHERE id = ?', [transactionId]);
+    await db.run('UPDATE users SET credits = credits + ? WHERE id = ?', [cost, userId]);
+  }
+  await db.run('DELETE FROM downloads WHERE id = ?', [downloadLogId]);
 }
 
 /**
@@ -90,7 +148,8 @@ function streamFile(filePath, filename, mimeType, res) {
 
 /**
  * Process a download request: validate access, log, and stream the file.
- * Atomicity: log is created BEFORE streaming; if streaming fails the log is rolled back.
+ * Atomicity: for avulso downloads the debit + ledger + log are created in a
+ * transaction BEFORE streaming; if streaming fails everything is rolled back.
  * Req 7.1, 7.2, 7.3, 7.4, 8.1, 8.4
  * @param {number} userId
  * @param {number} fileId
@@ -139,6 +198,17 @@ async function processDownload(userId, fileId, ipAddress, res) {
       });
     }
 
+    if (reason === 'INSUFFICIENT_CREDITS') {
+      return res.status(402).json({
+        error: {
+          code: 'INSUFFICIENT_CREDITS',
+          message: 'Créditos insuficientes para este download',
+          required: accessResult.required,
+          balance: accessResult.balance
+        }
+      });
+    }
+
     // Generic denial (e.g. File not found from validator)
     return res.status(403).json({ error: { code: 'FORBIDDEN', message: reason } });
   }
@@ -149,20 +219,44 @@ async function processDownload(userId, fileId, ipAddress, res) {
     return res.status(404).json({ error: { code: 'NOT_FOUND', message: 'File not found' } });
   }
 
-  // Step 3: Log the download BEFORE streaming (Req 8.4)
-  const downloadLog = await logDownload(userId, fileId, ipAddress);
+  // Step 3: Charge credits (avulso) or just log (subscription path)
+  const creditCost = accessResult.creditCost !== undefined ? accessResult.creditCost : null;
+  let downloadLog;
+  let creditTransactionId = null;
 
-  // Step 4: Stream the file; rollback log on failure
+  if (creditCost !== null) {
+    try {
+      const charged = await debitCredits(userId, fileId, creditCost, ipAddress);
+      downloadLog = charged.downloadLog;
+      creditTransactionId = charged.transactionId;
+    } catch (debitError) {
+      if (debitError.code === 'INSUFFICIENT_CREDITS') {
+        const user = await db.get('SELECT credits FROM users WHERE id = ?', [userId]);
+        return res.status(402).json({
+          error: {
+            code: 'INSUFFICIENT_CREDITS',
+            message: 'Créditos insuficientes para este download',
+            required: creditCost,
+            balance: user ? user.credits : 0
+          }
+        });
+      }
+      throw debitError;
+    }
+  } else {
+    downloadLog = await logDownload(userId, fileId, ipAddress);
+  }
+
+  // Step 4: Stream the file; rollback charge/log on failure
   const filePath = path.join(UPLOAD_DIR, file.path);
 
   try {
     await streamFile(filePath, file.filename, file.mime_type, res);
   } catch (streamError) {
-    // Rollback: delete the log entry so atomicity is preserved
     try {
-      await db.run('DELETE FROM downloads WHERE id = ?', [downloadLog.id]);
+      await rollbackCreditDownload(userId, creditCost, creditTransactionId, downloadLog.id);
     } catch (rollbackError) {
-      console.error('Failed to rollback download log:', rollbackError);
+      console.error('Failed to rollback download:', rollbackError);
     }
 
     if (!res.headersSent) {
@@ -175,5 +269,7 @@ module.exports = {
   processDownload,
   logDownload,
   streamFile,
-  getRealIpAddress
+  getRealIpAddress,
+  debitCredits,
+  rollbackCreditDownload
 };

@@ -1,5 +1,6 @@
 // Mock dependencies BEFORE importing modules
 jest.mock('../../db/database');
+jest.mock('../accessValidator');
 jest.mock('fs', () => ({
   promises: {
     unlink: jest.fn()
@@ -7,6 +8,7 @@ jest.mock('fs', () => ({
 }));
 
 const fileManager = require('../fileManager');
+const accessValidator = require('../accessValidator');
 const db = require('../../db/database');
 const fs = require('fs').promises;
 
@@ -33,7 +35,7 @@ describe('FileManager', () => {
 
       expect(db.run).toHaveBeenCalledWith(
         expect.stringContaining('INSERT INTO files'),
-        ['report.pdf', 'uploads/report.pdf', 'application/pdf', 2048, 3, '[]', null]
+        ['report.pdf', 'uploads/report.pdf', 'application/pdf', 2048, 3, '[]', null, null]
       );
 
       expect(result).toMatchObject({
@@ -142,7 +144,7 @@ describe('FileManager', () => {
 
       expect(db.run).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE files'),
-        [JSON.stringify([1, 2]), 5, null, null, null, 1]
+        [JSON.stringify([1, 2]), 5, null, null, null, null, 1]
       );
 
       expect(result).toMatchObject({
@@ -160,7 +162,7 @@ describe('FileManager', () => {
 
       expect(db.run).toHaveBeenCalledWith(
         expect.stringContaining('UPDATE files'),
-        [JSON.stringify([1]), null, null, null, null, 1]
+        [JSON.stringify([1]), null, null, null, null, null, 1]
       );
       expect(result.max_downloads_per_user).toBeNull();
     });
@@ -212,11 +214,45 @@ describe('FileManager', () => {
 
       expect(db.run).not.toHaveBeenCalled();
     });
+
+    it('should reject invalid creditCost with INVALID_CREDIT_COST', async () => {
+      await expect(
+        fileManager.updateFilePermissions(1, [1], null, { creditCost: 0 })
+      ).rejects.toMatchObject({ code: 'INVALID_CREDIT_COST', statusCode: 400 });
+
+      await expect(
+        fileManager.updateFilePermissions(1, [1], null, { creditCost: -3 })
+      ).rejects.toMatchObject({ code: 'INVALID_CREDIT_COST', statusCode: 400 });
+
+      await expect(
+        fileManager.updateFilePermissions(1, [1], null, { creditCost: 2.5 })
+      ).rejects.toMatchObject({ code: 'INVALID_CREDIT_COST', statusCode: 400 });
+
+      expect(db.run).not.toHaveBeenCalled();
+    });
+
+    it('should update credit_cost when creditCost is provided', async () => {
+      db.run.mockResolvedValue({ changes: 1 });
+      db.get.mockResolvedValue({ ...mockUpdatedFile, credit_cost: 5 });
+
+      const result = await fileManager.updateFilePermissions(1, [1], null, { creditCost: 5 });
+
+      expect(db.run).toHaveBeenCalledWith(
+        expect.stringContaining('credit_cost'),
+        [JSON.stringify([1]), null, 5, null, null, null, 1]
+      );
+      expect(result.credit_cost).toBe(5);
+    });
   });
 
   // ─── listFilesForPlan ──────────────────────────────────────────────────────
 
   describe('listFilesForPlan', () => {
+    beforeEach(() => {
+      accessValidator.getCreditMultiplier.mockResolvedValue(1);
+      accessValidator.computeEffectiveCreditCost.mockImplementation(cost => cost);
+    });
+
     it('should return only files whose allowed_plan_ids includes the user plan (Req 6.1)', async () => {
       db.all.mockResolvedValue([
         {
@@ -325,6 +361,54 @@ describe('FileManager', () => {
         expect.stringContaining('downloads'),
         [99]
       );
+    });
+
+    it('should include avulso files (credit_cost set) even when the plan has no access', async () => {
+      db.all.mockResolvedValue([
+        {
+          id: 20,
+          filename: 'avulso.pdf',
+          path: 'avulso.pdf',
+          mime_type: 'application/pdf',
+          size: 100,
+          uploaded_by: 1,
+          allowed_plan_ids: '[9]',
+          max_downloads_per_user: null,
+          credit_cost: 5,
+          downloads_count: 0,
+          created_at: '2024-01-01T00:00:00.000Z'
+        }
+      ]);
+
+      const result = await fileManager.listFilesForPlan(1, 42);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].id).toBe(20);
+      expect(result[0].effective_credit_cost).toBe(5);
+      expect(accessValidator.getCreditMultiplier).toHaveBeenCalledWith(1);
+    });
+
+    it('should set effective_credit_cost to null for non-avulso files', async () => {
+      db.all.mockResolvedValue([
+        {
+          id: 21,
+          filename: 'plan.pdf',
+          path: 'plan.pdf',
+          mime_type: 'application/pdf',
+          size: 100,
+          uploaded_by: 1,
+          allowed_plan_ids: '[1]',
+          max_downloads_per_user: null,
+          credit_cost: null,
+          downloads_count: 0,
+          created_at: '2024-01-01T00:00:00.000Z'
+        }
+      ]);
+
+      const result = await fileManager.listFilesForPlan(1, 42);
+
+      expect(result).toHaveLength(1);
+      expect(result[0].effective_credit_cost).toBeNull();
     });
   });
 

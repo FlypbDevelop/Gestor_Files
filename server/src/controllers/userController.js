@@ -15,7 +15,7 @@ const db = require('../db/database');
 async function listUsers(req, res) {
   try {
     const users = await db.all(
-      `SELECT u.id, u.name, u.email, u.role, u.plan_id, u.created_at,
+      `SELECT u.id, u.name, u.email, u.role, u.plan_id, u.credits, u.created_at,
               p.name AS plan_name
        FROM users u
        LEFT JOIN plans p ON u.plan_id = p.id
@@ -122,7 +122,69 @@ async function updateUserPlan(req, res) {
   }
 }
 
+/**
+ * Conceder/ajustar créditos de um usuário (ADMIN only)
+ * POST /api/users/:id/credits
+ * @param {Express.Request} req - Request com params.id e body: { amount }
+ * @param {Express.Response} res - Response
+ */
+async function grantCredits(req, res) {
+  try {
+    const userId = parseInt(req.params.id, 10);
+    if (isNaN(userId)) {
+      return res.status(400).json({ error: { code: 'INVALID_USER_ID', message: 'Invalid user ID' } });
+    }
+
+    const { amount } = req.body;
+    const parsedAmount = parseInt(amount, 10);
+    if (amount === undefined || amount === null || isNaN(parsedAmount) || parsedAmount === 0) {
+      return res.status(400).json({
+        error: { code: 'INVALID_AMOUNT', message: 'amount must be a non-zero integer' }
+      });
+    }
+
+    const user = await db.get('SELECT id, name, email, role, plan_id, credits FROM users WHERE id = ?', [userId]);
+    if (!user) {
+      return res.status(404).json({ error: { code: 'USER_NOT_FOUND', message: 'User not found' } });
+    }
+
+    // Debit (negative) must never take the user below zero
+    if (parsedAmount < 0 && user.credits + parsedAmount < 0) {
+      return res.status(400).json({
+        error: { code: 'INSUFFICIENT_CREDITS', message: 'O usuário não possui créditos suficientes' }
+      });
+    }
+
+    const newBalance = user.credits + parsedAmount;
+
+    await db.withTransaction(async () => {
+      await db.run('UPDATE users SET credits = ? WHERE id = ?', [newBalance, userId]);
+      await db.run(
+        'INSERT INTO credit_transactions (user_id, amount, reason) VALUES (?, ?, ?)',
+        [userId, parsedAmount, parsedAmount > 0 ? 'GRANT' : 'ADJUST']
+      );
+    });
+
+    const updated = await db.get(
+      `SELECT u.id, u.name, u.email, u.role, u.plan_id, u.credits, u.created_at,
+              p.name AS plan_name
+       FROM users u
+       LEFT JOIN plans p ON u.plan_id = p.id
+       WHERE u.id = ?`,
+      [userId]
+    );
+
+    res.status(200).json({ user: updated });
+  } catch (error) {
+    console.error('Grant credits error:', error);
+    res.status(500).json({
+      error: { code: 'INTERNAL_ERROR', message: 'An error occurred while updating credits' }
+    });
+  }
+}
+
 module.exports = {
   listUsers,
-  updateUserPlan
+  updateUserPlan,
+  grantCredits
 };

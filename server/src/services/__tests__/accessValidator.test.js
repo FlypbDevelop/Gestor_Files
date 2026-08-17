@@ -143,4 +143,118 @@ describe('AccessValidator', () => {
       expect(result).toEqual({ allowed: true });
     });
   });
+
+  // ─── Avulso (credits) path ──────────────────────────────────────────────────
+
+  describe('validateDownloadAccess - avulso credits', () => {
+    it('should allow an avulso download with creditCost when plan has no access but balance is enough', async () => {
+      db.get
+        .mockResolvedValueOnce({ id: 1, plan_id: 3, credits: 20 }) // user: plan 3, 20 credits
+        .mockResolvedValueOnce({
+          id: 5,
+          allowed_plan_ids: '[1]', // plan 3 has NO access
+          max_downloads_per_user: null,
+          credit_cost: 5
+        })
+        .mockResolvedValueOnce({ features: '{"creditMultiplier": 1.5}' }); // plan 3 multiplier
+
+      const result = await validator.validateDownloadAccess(1, 5);
+
+      expect(result).toEqual({ allowed: true, creditCost: 8 }); // ceil(5 * 1.5) = 8
+    });
+
+    it('should deny with INSUFFICIENT_CREDITS when balance is lower than the effective cost', async () => {
+      db.get
+        .mockResolvedValueOnce({ id: 1, plan_id: 1, credits: 2 }) // user: plan 1, 2 credits
+        .mockResolvedValueOnce({
+          id: 5,
+          allowed_plan_ids: '[2]', // plan 1 has NO access
+          max_downloads_per_user: null,
+          credit_cost: 5
+        })
+        .mockResolvedValueOnce({ features: '{"creditMultiplier": 1.0}' });
+
+      const result = await validator.validateDownloadAccess(1, 5);
+
+      expect(result).toEqual({
+        allowed: false,
+        reason: 'INSUFFICIENT_CREDITS',
+        required: 5,
+        balance: 2
+      });
+    });
+
+    it('should use default multiplier when plan features have no creditMultiplier', async () => {
+      db.get
+        .mockResolvedValueOnce({ id: 1, plan_id: 2, credits: 10 })
+        .mockResolvedValueOnce({
+          id: 6,
+          allowed_plan_ids: '[1]',
+          max_downloads_per_user: null,
+          credit_cost: 3
+        })
+        .mockResolvedValueOnce({ features: '{"maxDownloadsPerMonth": 10}' });
+
+      const result = await validator.validateDownloadAccess(1, 6);
+
+      expect(result).toEqual({ allowed: true, creditCost: 3 }); // default multiplier 1.0
+    });
+
+    it('should deny with plan reason when file is not avulso and plan has no access', async () => {
+      db.get
+        .mockResolvedValueOnce({ id: 1, plan_id: 3, credits: 50 })
+        .mockResolvedValueOnce({
+          id: 7,
+          allowed_plan_ids: '[1]',
+          max_downloads_per_user: null,
+          credit_cost: null // not avulso
+        });
+
+      const result = await validator.validateDownloadAccess(1, 7);
+
+      expect(result).toEqual({ allowed: false, reason: 'Plan does not have access to this file' });
+    });
+  });
+
+  // ─── getCreditMultiplier / computeEffectiveCreditCost ───────────────────────
+
+  describe('getCreditMultiplier', () => {
+    it('should return the configured multiplier', async () => {
+      db.get.mockResolvedValue({ features: '{"creditMultiplier": 2.0}' });
+
+      const mult = await validator.getCreditMultiplier(1);
+      expect(mult).toBe(2.0);
+    });
+
+    it('should return 1.0 when features are missing or malformed', async () => {
+      db.get.mockResolvedValue({ features: null });
+      expect(await validator.getCreditMultiplier(1)).toBe(1.0);
+
+      db.get.mockResolvedValue({ features: 'not-json' });
+      expect(await validator.getCreditMultiplier(1)).toBe(1.0);
+
+      db.get.mockResolvedValue(undefined);
+      expect(await validator.getCreditMultiplier(1)).toBe(1.0);
+    });
+  });
+
+  describe('computeEffectiveCreditCost', () => {
+    const { computeEffectiveCreditCost } = require('../accessValidator');
+
+    it('should round up base * multiplier', () => {
+      expect(computeEffectiveCreditCost(5, 1.5)).toBe(8);
+      expect(computeEffectiveCreditCost(10, 2)).toBe(20);
+      expect(computeEffectiveCreditCost(1, 1)).toBe(1);
+    });
+
+    it('should fall back to multiplier 1.0 for invalid multipliers', () => {
+      expect(computeEffectiveCreditCost(5, 0)).toBe(5);
+      expect(computeEffectiveCreditCost(5, -1)).toBe(5);
+      expect(computeEffectiveCreditCost(5, undefined)).toBe(5);
+    });
+
+    it('should never return a cost below 1', () => {
+      expect(computeEffectiveCreditCost(1, 0.1)).toBe(1);
+    });
+  });
 });

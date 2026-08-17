@@ -63,6 +63,7 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
         password_hash TEXT NOT NULL,
         role TEXT NOT NULL CHECK(role IN ('USER', 'ADMIN')),
         plan_id INTEGER NOT NULL,
+        credits INTEGER NOT NULL DEFAULT 0,
         created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (plan_id) REFERENCES plans(id)
@@ -79,6 +80,7 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
         uploaded_by INTEGER NOT NULL,
         allowed_plan_ids TEXT NOT NULL,
         max_downloads_per_user INTEGER,
+        credit_cost INTEGER,
         custom_name TEXT,
         description TEXT,
         version TEXT,
@@ -94,7 +96,21 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
         user_id INTEGER NOT NULL,
         file_id INTEGER NOT NULL,
         ip_address TEXT NOT NULL,
+        credit_cost INTEGER,
         downloaded_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+        FOREIGN KEY (user_id) REFERENCES users(id),
+        FOREIGN KEY (file_id) REFERENCES files(id)
+      )
+    `);
+
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS credit_transactions (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        user_id INTEGER NOT NULL,
+        amount INTEGER NOT NULL,
+        reason TEXT NOT NULL,
+        file_id INTEGER,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
         FOREIGN KEY (user_id) REFERENCES users(id),
         FOREIGN KEY (file_id) REFERENCES files(id)
       )
@@ -496,6 +512,72 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
 
         // Pode retornar 404 (não encontrado) ou 403 (proibido - arquivo não encontrado)
         expect([404, 403]).toContain(response.status);
+      });
+    });
+
+    describe('5. Download Avulso (créditos)', () => {
+      let avulsoFileId;
+
+      beforeAll(async () => {
+        // Criar arquivo avulso: plano Free (1) NÃO tem acesso, custo de 3 créditos
+        // O arquivo físico vai em server/uploads (onde o downloadController procura)
+        const testFilePath = path.join(__dirname, '../../../uploads/avulso-file.txt');
+        fs.writeFileSync(testFilePath, 'Arquivo avulso pago com créditos');
+
+        const result = await db.run(
+          `INSERT INTO files (filename, path, mime_type, size, uploaded_by, allowed_plan_ids, max_downloads_per_user, credit_cost)
+           VALUES (?, ?, ?, ?, ?, ?, ?, ?)`,
+          ['avulso-file.txt', 'avulso-file.txt', 'text/plain', 32, adminId, '[3]', null, 3]
+        );
+        avulsoFileId = result.lastID;
+      });
+
+      it('deve negar download avulso com saldo insuficiente (402)', async () => {
+        const response = await request(app)
+          .get(`/api/downloads/${avulsoFileId}`)
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect(response.status).toBe(402);
+        expect(response.body.error.code).toBe('INSUFFICIENT_CREDITS');
+      });
+
+      it('deve conceder créditos via admin e listar no extrato', async () => {
+        const response = await request(app)
+          .post(`/api/users/${userId}/credits`)
+          .set('Authorization', `Bearer ${adminToken}`)
+          .send({ amount: 10 });
+
+        expect(response.status).toBe(200);
+        expect(response.body.user.credits).toBe(10);
+      });
+
+      it('deve permitir download avulso debitando créditos', async () => {
+        const response = await request(app)
+          .get(`/api/downloads/${avulsoFileId}`)
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect([200, 500]).toContain(response.status);
+
+        // Verificar saldo debitado: 10 - 3 = 7
+        const user = await db.get('SELECT credits FROM users WHERE id = ?', [userId]);
+        expect(user.credits).toBe(7);
+
+        // Extrato deve ter uma transação DOWNLOAD de -3
+        const txn = await db.get(
+          "SELECT amount, reason FROM credit_transactions WHERE user_id = ? AND reason = 'DOWNLOAD'",
+          [userId]
+        );
+        expect(txn).toBeDefined();
+        expect(txn.amount).toBe(-3);
+      });
+
+      it('deve rejeitar download de usuário sem admin (não admin não concede créditos)', async () => {
+        const response = await request(app)
+          .post(`/api/users/${userId}/credits`)
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ amount: 5 });
+
+        expect(response.status).toBe(403);
       });
     });
   });

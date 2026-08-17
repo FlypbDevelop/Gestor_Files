@@ -12,6 +12,7 @@ interface EditModalState {
   filename: string;
   selectedPlanIds: number[];
   maxDownloads: string;
+  creditCost: string;
   customName: string;
   description: string;
   version: string;
@@ -99,6 +100,7 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
       filename: file.filename,
       selectedPlanIds: [...file.allowed_plan_ids],
       maxDownloads: file.max_downloads_per_user !== null ? String(file.max_downloads_per_user) : '',
+      creditCost: file.credit_cost !== null && file.credit_cost !== undefined ? String(file.credit_cost) : '',
       customName: file.custom_name || '',
       description: file.description || '',
       version: file.version || '',
@@ -123,14 +125,21 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
 
   const validateModal = (): boolean => {
     if (!editModal) return false;
-    if (editModal.selectedPlanIds.length === 0) {
-      setEditModal((prev) => prev ? { ...prev, validationError: 'Selecione pelo menos um plano.' } : prev);
+    if (editModal.selectedPlanIds.length === 0 && editModal.creditCost.trim() === '') {
+      setEditModal((prev) => prev ? { ...prev, validationError: 'Selecione pelo menos um plano ou defina um custo em créditos (avulso).' } : prev);
       return false;
     }
     if (editModal.maxDownloads !== '') {
       const parsed = parseInt(editModal.maxDownloads, 10);
       if (isNaN(parsed) || parsed <= 0 || String(parsed) !== editModal.maxDownloads.trim()) {
         setEditModal((prev) => prev ? { ...prev, validationError: 'Máximo de downloads deve ser um número inteiro positivo.' } : prev);
+        return false;
+      }
+    }
+    if (editModal.creditCost.trim() !== '') {
+      const parsed = parseInt(editModal.creditCost, 10);
+      if (isNaN(parsed) || parsed <= 0 || String(parsed) !== editModal.creditCost.trim()) {
+        setEditModal((prev) => prev ? { ...prev, validationError: 'Custo em créditos deve ser um número inteiro positivo.' } : prev);
         return false;
       }
     }
@@ -143,6 +152,7 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
     const permissions: FilePermissions = {
       allowedPlanIds: editModal.selectedPlanIds,
       maxDownloadsPerUser: editModal.maxDownloads.trim() === '' ? null : parseInt(editModal.maxDownloads, 10),
+      creditCost: editModal.creditCost.trim() === '' ? null : parseInt(editModal.creditCost, 10),
       customName: editModal.customName.trim() || null,
       description: editModal.description.trim() || null,
       version: editModal.version.trim() || null,
@@ -203,6 +213,7 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                     <th className="px-4 py-3">Tamanho</th>
                     <th className="px-4 py-3">Planos</th>
                     <th className="px-4 py-3">Máx. downloads</th>
+                    <th className="px-4 py-3">Custo avulso</th>
                     <th className="px-4 py-3"></th>
                   </tr>
                 </thead>
@@ -226,6 +237,11 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                       <td className="px-4 py-3 text-sm text-gray-500">{getPlanNames(file.allowed_plan_ids)}</td>
                       <td className="px-4 py-3 text-sm text-gray-500">
                         {file.max_downloads_per_user !== null ? file.max_downloads_per_user : 'Ilimitado'}
+                      </td>
+                      <td className="px-4 py-3 text-sm text-gray-500">
+                        {file.credit_cost !== null && file.credit_cost !== undefined
+                          ? `${file.credit_cost} créditos`
+                          : '—'}
                       </td>
                       <td className="px-4 py-3 text-right">
                         <div className="flex items-center justify-end gap-2">
@@ -269,6 +285,12 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                     <span>
                       Máx. downloads:{' '}
                       {file.max_downloads_per_user !== null ? file.max_downloads_per_user : 'Ilimitado'}
+                    </span>
+                    <span>
+                      Avulso:{' '}
+                      {file.credit_cost !== null && file.credit_cost !== undefined
+                        ? `${file.credit_cost} créditos`
+                        : 'Não'}
                     </span>
                   </div>
                   <div className="flex gap-2">
@@ -393,6 +415,24 @@ export default function FileManagement({ plans, refreshKey }: FileManagementProp
                   onChange={(e) => setEditModal((prev) => prev ? { ...prev, maxDownloads: e.target.value, validationError: '' } : prev)}
                   disabled={editModal.saving}
                   placeholder="Ilimitado"
+                  className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
+                />
+              </div>
+
+              {/* Custo avulso */}
+              <div>
+                <label className="block text-sm font-medium text-gray-700 mb-1">
+                  Custo em créditos (download avulso){' '}
+                  <span className="text-gray-400 font-normal">(deixe em branco para não ser avulso)</span>
+                </label>
+                <input
+                  type="number"
+                  min="1"
+                  step="1"
+                  value={editModal.creditCost}
+                  onChange={(e) => setEditModal((prev) => prev ? { ...prev, creditCost: e.target.value, validationError: '' } : prev)}
+                  disabled={editModal.saving}
+                  placeholder="Ex: 5"
                   className="w-full sm:w-40 px-3 py-2 text-sm border border-gray-300 rounded focus:outline-none focus:ring-2 focus:ring-blue-500 disabled:opacity-50"
                 />
               </div>

@@ -49,6 +49,16 @@ export default function UserDashboard() {
 
   if (!data) return null;
 
+  const getCreditReasonLabel = (reason: string): string => {
+    switch (reason) {
+      case 'DOWNLOAD': return 'Download avulso';
+      case 'GRANT': return 'Créditos concedidos';
+      case 'ADJUST': return 'Ajuste administrativo';
+      case 'PURCHASE': return 'Compra de créditos';
+      default: return reason;
+    }
+  };
+
   // Req 13.1: ordenar histórico por data descendente
   const sortedHistory = [...data.downloadHistory].sort(
     (a, b) => new Date(b.downloaded_at).getTime() - new Date(a.downloaded_at).getTime()
@@ -57,7 +67,7 @@ export default function UserDashboard() {
   return (
     <div className="space-y-6">
       {/* Cards de resumo */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
+      <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
         {/* Req 13.2: informações do plano atual */}
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-5">
           <p className="text-sm text-gray-500">Plano atual</p>
@@ -74,6 +84,17 @@ export default function UserDashboard() {
           <p className="text-sm text-gray-500">Total de downloads</p>
           <p className="mt-1 text-2xl font-bold text-gray-800">
             {data.totalDownloads.toLocaleString('pt-BR')}
+          </p>
+        </div>
+
+        {/* Saldo de créditos (downloads avulsos) */}
+        <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-5">
+          <p className="text-sm text-gray-500">Saldo de créditos</p>
+          <p className="mt-1 text-2xl font-bold text-gray-800">
+            {data.credits.toLocaleString('pt-BR')}
+          </p>
+          <p className="mt-1 text-xs text-gray-500">
+            Usados em downloads avulsos (arquivos fora do seu plano).
           </p>
         </div>
       </div>
@@ -137,6 +158,47 @@ export default function UserDashboard() {
               })}
             </div>
           </>
+        )}
+      </div>
+
+      {/* Extrato de créditos */}
+      <div id="extrato-creditos" className="bg-white rounded-lg shadow-sm border border-gray-200">
+        <div className="px-6 py-4 border-b border-gray-200">
+          <h2 className="text-base font-semibold text-gray-800">Extrato de créditos</h2>
+        </div>
+
+        {data.creditTransactions.length === 0 ? (
+          <p className="px-6 py-8 text-sm text-gray-500 text-center">
+            Nenhuma movimentação de créditos ainda.
+          </p>
+        ) : (
+          <div className="divide-y divide-gray-100">
+            {data.creditTransactions.map((tx) => {
+              const date = new Date(tx.created_at);
+              const positive = tx.amount > 0;
+              return (
+                <div key={tx.id} className="px-6 py-3 flex items-center justify-between gap-4">
+                  <div className="min-w-0">
+                    <p className="text-sm text-gray-800 truncate">
+                      {getCreditReasonLabel(tx.reason)}
+                      {tx.filename ? ` — ${tx.filename}` : ''}
+                    </p>
+                    <p className="text-xs text-gray-500">
+                      {date.toLocaleDateString('pt-BR')} às{' '}
+                      {date.toLocaleTimeString('pt-BR', { hour: '2-digit', minute: '2-digit' })}
+                    </p>
+                  </div>
+                  <span
+                    className={`shrink-0 text-sm font-semibold ${
+                      positive ? 'text-green-600' : 'text-red-600'
+                    }`}
+                  >
+                    {positive ? '+' : ''}{tx.amount}
+                  </span>
+                </div>
+              );
+            })}
+          </div>
         )}
       </div>
     </div>
