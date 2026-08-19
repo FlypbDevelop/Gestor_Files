@@ -207,6 +207,18 @@ class ApiClient {
     const res: AxiosResponse<Plan[]> = await this.instance.get('/plans');
     return res.data;
   }
+
+  // ---- Credits (user purchase) ----
+
+  async listCreditPackages(): Promise<CreditPackage[]> {
+    const res: AxiosResponse<CreditPackage[]> = await this.instance.get('/credits/packages');
+    return res.data;
+  }
+
+  async purchaseCredits(packageId: number): Promise<{ message: string; payment: SimulatedPayment; package: CreditPackage; user: User }> {
+    const res = await this.instance.post('/credits/purchase', { packageId });
+    return res.data;
+  }
 }
 
 const apiClient = new ApiClient();

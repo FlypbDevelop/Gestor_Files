@@ -116,6 +116,21 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
       )
     `);
 
+    await db.run(`
+      CREATE TABLE IF NOT EXISTS credit_packages (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        name TEXT NOT NULL,
+        credits INTEGER NOT NULL,
+        price REAL NOT NULL,
+        active INTEGER NOT NULL DEFAULT 1,
+        created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+      )
+    `);
+
+    await db.run("INSERT INTO credit_packages (name, credits, price) VALUES ('Starter', 10, 9.90)");
+    await db.run("INSERT INTO credit_packages (name, credits, price) VALUES ('Pro', 50, 39.90)");
+    await db.run("INSERT INTO credit_packages (name, credits, price) VALUES ('Premium', 100, 69.90)");
+
     // Inserir planos padrão
     await db.run("INSERT INTO plans (id, name, price, features) VALUES (1, 'Free', 0.00, '{\"maxDownloadsPerMonth\": 10}')");
     await db.run("INSERT INTO plans (id, name, price, features) VALUES (2, 'Basic', 9.99, '{\"maxDownloadsPerMonth\": 100}')");
@@ -622,6 +637,76 @@ describe('Testes E2E - Sistema de Gerenciamento de Arquivos', () => {
           .set('Authorization', `Bearer ${userToken}`);
 
         expect(response.status).toBe(403);
+      });
+    });
+  });
+
+  describe('Compra de Créditos (Phase 2)', () => {
+
+    describe('1. Listar Pacotes', () => {
+      it('deve listar pacotes de créditos ativos', async () => {
+        const response = await request(app)
+          .get('/api/credits/packages')
+          .set('Authorization', `Bearer ${userToken}`);
+
+        expect(response.status).toBe(200);
+        expect(response.body).toBeInstanceOf(Array);
+        expect(response.body.length).toBe(3);
+        expect(response.body[0]).toHaveProperty('name');
+        expect(response.body[0]).toHaveProperty('credits');
+        expect(response.body[0]).toHaveProperty('price');
+      });
+
+      it('deve rejeitar listagem sem autenticação', async () => {
+        const response = await request(app)
+          .get('/api/credits/packages');
+
+        expect(response.status).toBe(401);
+      });
+    });
+
+    describe('2. Comprar Créditos', () => {
+      it('deve comprar pacote Starter e creditar na conta', async () => {
+        const response = await request(app)
+          .post('/api/credits/purchase')
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ packageId: 1 });
+
+        expect(response.status).toBe(200);
+        expect(response.body.message).toContain('10');
+        expect(response.body.payment).toHaveProperty('id');
+        expect(response.body.payment.status).toBe('approved');
+        expect(response.body.package.credits).toBe(10);
+        expect(response.body.user.credits).toBe(17); // 7 (after download) + 10
+      });
+
+      it('deve rejeitar compra de pacote inexistente', async () => {
+        const response = await request(app)
+          .post('/api/credits/purchase')
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({ packageId: 999 });
+
+        expect(response.status).toBe(404);
+        expect(response.body.error.code).toBe('PACKAGE_NOT_FOUND');
+      });
+
+      it('deve rejeitar compra sem packageId', async () => {
+        const response = await request(app)
+          .post('/api/credits/purchase')
+          .set('Authorization', `Bearer ${userToken}`)
+          .send({});
+
+        expect(response.status).toBe(400);
+        expect(response.body.error.code).toBe('MISSING_FIELDS');
+      });
+
+      it('deve registrar transação PURCHASE no extrato', async () => {
+        const txn = await db.get(
+          "SELECT amount, reason FROM credit_transactions WHERE user_id = ? AND reason = 'PURCHASE' ORDER BY id DESC LIMIT 1",
+          [userId]
+        );
+        expect(txn).toBeDefined();
+        expect(txn.amount).toBe(10);
       });
     });
   });

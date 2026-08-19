@@ -2,14 +2,17 @@ import { useAuth } from '../contexts/AuthContext';
 import { useNavigate } from 'react-router-dom';
 import UserDashboard from '../components/user/UserDashboard';
 import FileList from '../components/user/FileList';
+import CreditStore from '../components/user/CreditStore';
+import { useState } from 'react';
 
 /**
- * DashboardPage - Página principal do usuário com dashboard e lista de arquivos.
+ * DashboardPage - Página principal do usuário com dashboard, créditos e lista de arquivos.
  * Requisitos: 13.1, 13.2, 13.3, 13.4, 14.4
  */
 export default function DashboardPage() {
   const { user, logout, isAdmin } = useAuth();
   const navigate = useNavigate();
+  const [userCredits, setUserCredits] = useState(user?.credits ?? 0);
 
   return (
     <div className="min-h-screen bg-gray-100">
@@ -43,13 +46,19 @@ export default function DashboardPage() {
         {/* Req 13.1, 13.2, 13.3, 13.4: Dashboard do usuário */}
         <section>
           <h1 className="text-2xl font-bold text-gray-800 mb-4">Meu Dashboard</h1>
-          <UserDashboard />
+          <UserDashboard creditsOverride={userCredits} />
+        </section>
+
+        {/* Compra de créditos (Phase 2) */}
+        <section>
+          <h2 className="text-xl font-bold text-gray-800 mb-4">Comprar Créditos</h2>
+          <CreditStore onCreditsUpdated={setUserCredits} />
         </section>
 
         {/* Lista de arquivos disponíveis */}
         <section>
           <h2 className="text-xl font-bold text-gray-800 mb-4">Arquivos disponíveis</h2>
-          <FileList />
+          <FileList creditsOverride={userCredits} />
         </section>
       </main>
     </div>

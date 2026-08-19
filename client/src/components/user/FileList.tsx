@@ -8,7 +8,11 @@ import { FileWithDownloadsRemaining, ApiRequestError } from '../../types';
  * Exibe nome, versão e descrição (tooltip) antes do download.
  * Requirements: 6.1, 6.2, 6.3, 6.4, 7.1, 7.2, 7.3
  */
-export default function FileList() {
+interface FileListProps {
+  creditsOverride?: number;
+}
+
+export default function FileList({ creditsOverride }: FileListProps) {
   const navigate = useNavigate();
   const [files, setFiles] = useState<FileWithDownloadsRemaining[]>([]);
   const [credits, setCredits] = useState<number | null>(null);
@@ -128,16 +132,18 @@ export default function FileList() {
     }
   };
 
+  const effectiveCredits = creditsOverride ?? credits;
+
   // Arquivos avulsos cujo custo efetivo excede o saldo atual do usuário
   const insufficientFiles = files.filter(
     (file) =>
       isAvulso(file) &&
-      credits !== null &&
-      (getEffectiveCreditCost(file) ?? 0) > credits
+      effectiveCredits !== null &&
+      (getEffectiveCreditCost(file) ?? 0) > effectiveCredits
   );
 
   const isCreditShort = (file: FileWithDownloadsRemaining): boolean =>
-    isAvulso(file) && credits !== null && (getEffectiveCreditCost(file) ?? 0) > credits;
+    isAvulso(file) && effectiveCredits !== null && (getEffectiveCreditCost(file) ?? 0) > effectiveCredits;
 
   if (loading) {
     return (
@@ -177,7 +183,7 @@ export default function FileList() {
               Saldo de créditos insuficiente
             </p>
             <p className="text-xs text-amber-700 mt-0.5">
-              Seu saldo ({credits} créditos) não cobre o custo de{' '}
+              Seu saldo ({effectiveCredits} créditos) não cobre o custo de{' '}
               {insufficientFiles.length === 1
                 ? `${getDisplayName(insufficientFiles[0])} (${getEffectiveCreditCost(insufficientFiles[0])} créditos)`
                 : `${insufficientFiles.length} arquivos avulsos`}.
@@ -371,7 +377,7 @@ export default function FileList() {
                 <div className="bg-gray-50 rounded p-3">
                   <p className="text-xs text-gray-500">Saldo atual</p>
                   <p className="mt-1 text-lg font-bold text-gray-800">
-                    {credits !== null ? credits : '—'}
+                    {effectiveCredits !== null ? effectiveCredits : '—'}
                   </p>
                 </div>
                 <div className="bg-gray-50 rounded p-3">
@@ -382,7 +388,7 @@ export default function FileList() {
                     }`}
                   >
                     {credits !== null
-                      ? Math.max(0, credits - (getEffectiveCreditCost(pendingFile) ?? 0))
+                      ? Math.max(0, (effectiveCredits ?? 0) - (getEffectiveCreditCost(pendingFile) ?? 0))
                       : '—'}
                   </p>
                 </div>
@@ -391,7 +397,7 @@ export default function FileList() {
               {isCreditShort(pendingFile) && (
                 <p className="text-sm text-red-600 bg-red-50 border border-red-200 rounded p-3">
                   Saldo insuficiente: este download custa{' '}
-                  {getEffectiveCreditCost(pendingFile)} créditos, mas você tem apenas {credits}.
+                  {getEffectiveCreditCost(pendingFile)} créditos, mas você tem apenas {effectiveCredits}.
                   Solicite mais créditos antes de continuar.
                 </p>
               )}

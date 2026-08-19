@@ -6,7 +6,11 @@ import { UserDashboard as UserDashboardData, ApiRequestError } from '../../types
  * UserDashboard - Exibe histórico de downloads e informações do plano do usuário.
  * Requisitos: 13.1, 13.2, 13.3, 13.4
  */
-export default function UserDashboard() {
+interface UserDashboardProps {
+  creditsOverride?: number;
+}
+
+export default function UserDashboard({ creditsOverride }: UserDashboardProps) {
   const [data, setData] = useState<UserDashboardData | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState('');
@@ -91,7 +95,7 @@ export default function UserDashboard() {
         <div className="bg-white rounded-lg shadow-sm border border-gray-200 px-6 py-5">
           <p className="text-sm text-gray-500">Saldo de créditos</p>
           <p className="mt-1 text-2xl font-bold text-gray-800">
-            {data.credits.toLocaleString('pt-BR')}
+            {(creditsOverride ?? data.credits).toLocaleString('pt-BR')}
           </p>
           <p className="mt-1 text-xs text-gray-500">
             Usados em downloads avulsos (arquivos fora do seu plano).

@@ -34,6 +34,7 @@ app.use('/api/downloads', require('./routes/downloads'));
 app.use('/api/users', require('./routes/users'));
 app.use('/api/plans', require('./routes/plans'));
 app.use('/api/dashboard', require('./routes/dashboard'));
+app.use('/api/credits', require('./routes/credits'));
 
 // Error handler global
 app.use((err, req, res, next) => {

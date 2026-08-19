@@ -128,6 +128,23 @@ export interface UserDashboard {
   creditTransactions: CreditTransaction[];
 }
 
+// ---- Credit Purchase (Phase 2) ----
+
+export interface CreditPackage {
+  id: number;
+  name: string;
+  credits: number;
+  price: number;
+}
+
+export interface SimulatedPayment {
+  id: string;
+  status: 'approved' | 'pending' | 'failed';
+  amount: number;
+  currency: string;
+  method: string;
+}
+
 // ---- Error Types ----
 
 export interface ApiError {
